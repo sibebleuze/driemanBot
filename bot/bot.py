@@ -17,8 +17,10 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 # GUILD = os.getenv('TEST_GUILD') if os.getenv('TESTER') == 'on' else os.getenv('WINA_GUILD')
 CHANNEL = os.getenv('DRIEMAN_CHANNEL')
 CATEGORY = os.getenv('DRIEMAN_CATEGORY')
+MIN_PLAYERS = int(os.getenv('MIN_PLAYERS'))
+PREFIX = os.getenv('PREFIX')
 help_command = commands.DefaultHelpCommand(no_category="DriemanBot commando's", help='Toont dit bericht')
-bot = commands.Bot(command_prefix='3man ', help_command=help_command)
+bot = commands.Bot(command_prefix=PREFIX, help_command=help_command)
 bot.spel = None
 
 
@@ -32,8 +34,14 @@ async def in_drieman_channel(ctx):
 
 
 async def game_busy(ctx):
-    if not (bot.spel != None and type(bot.spel) == Game):
+    if not (bot.spel is not None and type(bot.spel) == Game):
         raise commands.CheckFailure(message="no active game")
+    return True
+
+
+async def wrong_tempus(ctx):
+    if ctx.message.content[-2:] not in ["in", "ex"]:
+        raise commands.CheckFailure(message="wrong tempus status")
     return True
 
 
@@ -80,19 +88,19 @@ async def join(ctx):
 
 @bot.command(name='opgeven', help='Jezelf verwijderen uit de lijst van actieve spelers')
 @commands.check(game_busy)
-async def quit(ctx):
+async def leave(ctx):
     if ctx.author.name in [player.name for player in bot.spel.players]:
         response = bot.spel.remove_player(ctx.author.name)
         if not bot.spel.players:
             response += "\nDe laatste speler heeft het spel verlaten. Het spel is nu afgelopen.\n" \
-                        "Een nieuw spel kan begonnen worden als er opnieuw vier spelers zijn."
+                        f"Een nieuw spel kan begonnen worden als er opnieuw {MIN_PLAYERS} spelers zijn."
             bot.spel = None
             gc.collect()
-        elif len(bot.spel.players) <= 3:
+        elif len(bot.spel.players) <= (MIN_PLAYERS - 1):
             response += "Er zijn niet genoeg spelers om verder te spelen.\n" \
                         "Wacht tot er opnieuw genoeg spelers zijn of beëindig het spel.\n" \
-                        "Een nieuwe speler kan meedoen door '3man meedoen' te typen.\n" \
-                        "Het spel kan beëindigd worden door '3man stop' te typen."
+                        f"Een nieuwe speler kan meedoen door '{PREFIX}meedoen' te typen.\n" \
+                        f"Het spel kan beëindigd worden door '{PREFIX}stop' te typen."
             bot.spel.started = False
     else:
         response = "Je zit nog niet in het spel. Je moet eerst meedoen voor je kan opgeven."
@@ -102,21 +110,21 @@ async def quit(ctx):
     await ctx.channel.send(response)
 
 
-@bot.command(name='stop', help='Stop het spel als er minder dan 3 actieve spelers zijn')
+@bot.command(name='stop', help=f'Stop het spel als er minder dan {MIN_PLAYERS} actieve spelers zijn')
+@commands.check(game_busy)
 async def stop(ctx):
-    if bot.spel:
-        if len(bot.spel.players) <= 3:
-            response = "Het spel is nu afgelopen.\n" \
-                       "Een nieuw spel kan begonnen worden als er opnieuw vier spelers zijn."
-            bot.spel = None
-            gc.collect()
-        else:
-            response = "Er zijn nog meer dan vier spelers in het spel." \
-                       "Om te zorgen dat niet zomaar iedereen een actief spel kan afbreken,\n" \
-                       "kan het commando '3man stop' pas gebruikt worden als er 3 spelers of minder overblijven.\n" \
-                       f"Als je echt wil stoppen, zal/zullen nog {len(bot.spel.players) - 3} speler(s) het moeten opgeven."
+    if len(bot.spel.players) < MIN_PLAYERS:
+        response = "Het spel is nu afgelopen.\n" \
+                   f"Een nieuw spel kan begonnen worden als er opnieuw {MIN_PLAYERS} spelers zijn."
+        bot.spel = None
+        gc.collect()
     else:
-        response = "Er is geen spel bezig. Probeer je met mijn voeten te spelen?"
+        response = f"Er zijn nog meer dan {MIN_PLAYERS - 1} spelers in het spel." \
+                   "Om te zorgen dat niet zomaar iedereen een actief spel kan afbreken,\n" \
+                   f"kan het commando '{PREFIX}stop' pas gebruikt worden " \
+                   f"als er minder dan {MIN_PLAYERS} overblijven.\n" \
+                   "Als je echt wil stoppen, " \
+                   f"zal/zullen nog {len(bot.spel.players) - (MIN_PLAYERS - 1)} speler(s) het moeten opgeven."
     await ctx.channel.send(response)
 
 
@@ -125,7 +133,7 @@ async def start(ctx):
     if bot.spel:
         response = bot.spel.start_game()
     else:
-        response = "Er zijn nog geen spelers. Je hebt vier spelers nodig om te kunnen beginnen (zie art. 1)."
+        response = f"Er zijn nog geen spelers. Je hebt {MIN_PLAYERS} spelers nodig om te kunnen beginnen (zie art. 1)."
     await ctx.channel.send(response)
 
 
@@ -150,9 +158,13 @@ async def roll(ctx):
     await ctx.send(response)
 
 
-@bot.command(name='tempus in', help='DriemanBot houdt tijdelijk bij hoeveel je moet drinken')
+@bot.command(name='tempus', help='DriemanBot houdt tijdelijk bij hoeveel je moet drinken')
 async def temp_in(ctx):
-    await ctx.channel.send("NotImplementedError")
+    if ctx.author.name in [player.name for player in bot.spel.players]:
+        response = bot.spel.player_tempus(ctx.author.name, ctx.message.content[-2:])
+    else:
+        response = "Je zit nog niet in het spel. Je moet eerst meedoen voor je een tempus kan nemen."
+    await ctx.channel.send(response)
 
 
 @bot.event
@@ -169,8 +181,11 @@ async def on_command_error(ctx, error):
             await ctx.send(f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL} onder {CATEGORY}.\n'
                            f'Je bevindt je nu in het kanaal {ctx.channel.name} onder {ctx.channel.category.name}.')
         elif str(error) == "no active game":
-            await ctx.send("Er is geen spel bezig. Gebruik '3man meedoen' om als eerste mee te doen "
+            await ctx.send(f"Er is geen spel bezig. Gebruik '{PREFIX}meedoen' om als eerste mee te doen "
                            "of ga met iemand anders zijn voeten spelen.")
+        elif str(error) == "wrong tempus status":
+            await ctx.send(f"Je kan enkel '{PREFIX}tempus in' of '{PREFIX}tempus ex' gebruiken."
+                           f"{ctx.message.content} is geen geldig tempus commando.")
         else:
             with open('err.log', 'a') as f:
                 f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")

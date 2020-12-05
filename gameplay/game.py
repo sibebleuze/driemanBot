@@ -1,5 +1,12 @@
 #!/usr/bin/env python3
+import os  # noqa
+
+from dotenv import load_dotenv  # noqa
+
 from .player import Player  # noqa
+
+load_dotenv()
+MIN_PLAYERS = int(os.getenv('MIN_PLAYERS'))
 
 
 class Game():
@@ -29,9 +36,24 @@ class Game():
         return f"Speler {player.name} heeft het opgegeven. Slaap zacht jonge vriend."
 
     def start_game(self):
-        if len(self.players) >= 4:
+        if len(self.players) >= MIN_PLAYERS:
             self.started = True
             return "Het spel is gestart."
         else:
-            return "Nog niet genoeg spelers, je moet minstens met vier zijn om te kunnen driemannen (zie art. 1).\n" \
-                   f"Wacht tot er nog {4 - len(self.players)} speler(s) meer meedoet/meedoen."
+            return "Nog niet genoeg spelers, " \
+                   f"je moet minstens met {MIN_PLAYERS} zijn om te kunnen driemannen (zie art. 1).\n" \
+                   f"Wacht tot er nog {MIN_PLAYERS - len(self.players)} speler(s) meer meedoet/meedoen."
+
+    def player_tempus(self, player, status):
+        assert type(player) == str, f"Dit is geen naam van een speler, maar een {type(player)}."
+        assert isinstance(status, str) and status in ["in",
+                                                      "ex"], f"Misbruik van tempus commando, verkeerde status {status}"
+        names = [player.name for player in self.players]
+        assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
+        player = self.players[names.index(player)]
+        if (status, player.tempus) in [("ex", True), ("in", False)]:
+            player.switch_tempus()
+            return f"{player.name} heeft nu tempus, tot zo!" if player.tempus \
+                else f"Welkom terug {player.name}, je staat nog {player.achterstand} drankeenheden achter."
+        else:
+            return f"Je bent al in de modus 'tempus {status}'."

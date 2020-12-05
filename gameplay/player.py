@@ -6,6 +6,8 @@ class Player():
         self.previous_player = self
         self.next_player = self
         self.tempus = False
+        self.achterstand = 0
+        self.total = 0
 
     def set_previous_player(self, player):
         assert type(player) == Player, f"Dit is geen speler, maar een {type(player)}."
