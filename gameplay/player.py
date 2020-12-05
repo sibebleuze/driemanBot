@@ -20,3 +20,11 @@ class Player():
 
     def switch_tempus(self):
         self.tempus = not self.tempus
+
+    def add_to_drink(self, units):  # TO DO: deze functie gebruiken ipv de eigenschappen zelf aan te passen
+        self.achterstand += units
+        self.total += units
+
+    def distribute(self, player, units):  # TO DO: deze functie gebruiken ipv de eigenschappen zelf aan te passen
+        player.acherstand += units
+        self.uitdelen -= units

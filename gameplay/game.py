@@ -38,6 +38,7 @@ class Game():
         player.next_player.set_previous_player(player.previous_player)
         player.previous_player.set_next_player(player.next_player)
         self.players.remove(player)
+        # TO DO: meegeven hoeveel drankeenheden nog gedronken moeten worden (als deze persoon tempus heeft bvb.)
         return f"Speler {player.name} heeft het opgegeven. Slaap zacht jonge vriend."
 
     def start_game(self):
@@ -83,10 +84,26 @@ class Game():
         if not (sum(dice) in range(6, 8 + 1) or dice[0] == dice[1]):
             self.beurt = self.beurt.next_player
         response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
-        response += self.drinken()
-        # implementeer een functie om te bepalen voor welke spelers deze worp iets betekent
+        response += self.drink()
         return response
 
-    def drinken(self):
-        
-        return ""  # bepaal wie er allemaal moet drinken en hoeveel drankeenheden
+    def drink(self):
+        # TO DO: bepaal wie er allemaal moet drinken en hoeveel drankeenheden
+        return "NotImplementedError"
+
+    def check_player_distributor(self, player, units):
+        assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
+        names = [player.name for player in self.players]
+        assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
+        player = self.players[names.index(player)]
+        return 0 < player.uitdelen <= units
+
+    def distributor(self, player, other_player, units):
+        assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
+        assert isinstance(other_player, str), f"Dit is geen naam van een speler, maar een {type(other_player)}."
+        assert isinstance(units, int), f"Dit is geen aantal drankeenheden, maar een {type(units)}."
+        names = [player.name for player in self.players]
+        assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
+        assert other_player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
+        player = self.players[names.index(player)]
+        other_player = self.players[names.index(other_player)]
