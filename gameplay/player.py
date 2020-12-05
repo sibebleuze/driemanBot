@@ -8,6 +8,7 @@ class Player():
         self.tempus = False
         self.achterstand = 0
         self.total = 0
+        self.uitdelen = 0
 
     def set_previous_player(self, player):
         assert type(player) == Player, f"Dit is geen speler, maar een {type(player)}."

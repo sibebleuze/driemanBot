@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import os  # noqa
+import random  # noqa
 
 from dotenv import load_dotenv  # noqa
 
@@ -15,6 +16,7 @@ class Game():
         self.drieman = None
         self.players = []
         self.started = False
+        self.beurt = None
 
     def add_player(self, player):
         assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
@@ -31,6 +33,8 @@ class Game():
         names = [player.name for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
+        if player == self.drieman:
+            self.drieman = None
         player.next_player.set_previous_player(player.previous_player)
         player.previous_player.set_next_player(player.next_player)
         self.players.remove(player)
@@ -39,6 +43,7 @@ class Game():
     def start_game(self):
         if len(self.players) >= MIN_PLAYERS:
             self.started = True
+            self.beurt = self.players[0]
             return "Het spel is gestart."
         else:
             return "Nog niet genoeg spelers, " \
@@ -58,3 +63,30 @@ class Game():
                 else f"Welkom terug {player.name}, je staat nog {player.achterstand} drankeenheden achter."
         else:
             return f"Je bent al in de modus '{TEMPUS} {status}'."
+
+    def roll(self, player):
+        assert player == self.beurt, "Een speler die niet aan de beurt is heeft geworpen."
+        dice = [random.randint(1, 6) for _ in range(2)]
+        if 3 in dice:
+            if self.drieman is not None:
+                self.drieman.achterstand += dice.count(3)
+        if sum(dice) == 3:
+            self.drieman = player
+        elif sum(dice) == 6:
+            player.previous_player.achterstand += 1
+        elif sum(dice) == 7:
+            player.achterstand += 1
+        elif sum(dice) == 8:
+            player.next_player.achterstand += 1
+        elif dice[0] == dice[1]:
+            player.uitdelen += dice[0]
+        if not (sum(dice) in range(6, 8 + 1) or dice[0] == dice[1]):
+            self.beurt = self.beurt.next_player
+        response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
+        response += self.drinken()
+        # implementeer een functie om te bepalen voor welke spelers deze worp iets betekent
+        return response
+
+    def drinken(self):
+        
+        return ""  # bepaal wie er allemaal moet drinken en hoeveel drankeenheden

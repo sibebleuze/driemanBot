@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import gc  # noqa
 import os  # noqa
-import random  # noqa
 import sys  # noqa
 
 import discord  # noqa
@@ -14,10 +13,10 @@ from gameplay.player import Player  # noqa
 gc.enable()
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-# GUILD = os.getenv('TEST_GUILD') if os.getenv('TESTER') == 'on' else os.getenv('WINA_GUILD')
+# SERVER = os.getenv('TEST_SERVER') if os.getenv('TESTER') == 'on' else os.getenv('WINA_SERVER')
 CHANNEL = os.getenv('DRIEMAN_CHANNEL')
 CATEGORY = os.getenv('DRIEMAN_CATEGORY')
-MIN_PLAYERS = int(os.getenv('MIN_PLAYERS'))
+MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if os.getenv('TESTER') == 'on' else int(os.getenv('MIN_PLAYERS'))
 PREFIX = os.getenv('PREFIX')
 MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, OPGEVEN = os.getenv('MEEDOEN'), os.getenv('REGELS'), os.getenv(
     'ROL'), os.getenv('SPELERS'), os.getenv('START'), os.getenv('TEMPUS'), os.getenv('STOP'), os.getenv('OPGEVEN')
@@ -47,16 +46,24 @@ async def wrong_tempus(ctx):
     return True
 
 
+@commands.check(game_busy)
+async def not_your_turn(ctx):
+    if not bot.spel.started:
+        raise commands.CheckFailure(message="game not started")
+    if ctx.author.name != bot.spel.beurt.name:
+        raise commands.CheckFailure(message="not your turn")
+    return True
+
 @bot.event
 async def on_ready():
     print(f'{bot.user.name} has connected to Discord!')
-    # guild = discord.utils.get(bot.guilds, name=GUILD)
-    for guild in bot.guilds:
+    # server = discord.utils.get(bot.guilds, name=SERVER)
+    for server in bot.guilds:
         print(
             f'{bot.user.name} is connected to the following server:\n'
-            f'{guild.name}(id: {guild.id})'
+            f'{server.name}(id: {server.id})'
         )
-        members = '\n - '.join([member.name for member in guild.members])
+        members = '\n - '.join([member.name for member in server.members])
         print(f'Visible Server Members:\n - {members}')
 
 
@@ -131,32 +138,24 @@ async def stop(ctx):
 
 
 @bot.command(name=START, help='Start het spel, werkt enkel als er voldoende spelers zijn')
+@commands.check(game_busy)
 async def start(ctx):
-    if bot.spel:
-        response = bot.spel.start_game()
-    else:
-        response = f"Er zijn nog geen spelers. Je hebt {MIN_PLAYERS} spelers nodig om te kunnen beginnen (zie art. 1)."
+    response = bot.spel.start_game()
     await ctx.channel.send(response)
 
 
 @bot.command(name=SPELERS, help='Geeft een lijst van alle actieve spelers')
+@commands.check(game_busy)
 async def who_is_here(ctx):
-    if bot.spel:
-        response = "\n".join([f"Speler {i}: " + player.name + "" for i, player in enumerate(bot.spel.players)])
-    else:
-        response = "Er zijn nog geen spelers."
+    response = "\n".join([f"Speler {i}: " + player.name + "" for i, player in enumerate(bot.spel.players)])
     await ctx.channel.send(response)
 
 
 @bot.command(name=ROL, help='Rol de dobbelsteen als het jouw beurt is')
+@commands.check(game_busy)
+@commands.check(not_your_turn)
 async def roll(ctx):
-    # implementeer een manier om te checken dat deze speler aan de beurt is
-    dice = [
-        str(random.choice(range(1, 6 + 1)))
-        for _ in range(2)
-    ]
-    # implementeer een functie om te bepalen voor welke spelers deze worp iets betekent
-    response = ', '.join(dice)  # tijdelijke filler
+    response = bot.spel.roll()
     await ctx.send(response)
 
 
@@ -188,6 +187,11 @@ async def on_command_error(ctx, error):
         elif str(error) == "wrong tempus status":
             await ctx.send(f"Je kan enkel '{PREFIX}{TEMPUS} in' of '{PREFIX}{TEMPUS} ex' gebruiken."
                            f"{ctx.message.content} is geen geldig tempus commando.")
+        elif str(error) == "not your turn":
+            await ctx.send("Je bent nu niet aan de beurt, wacht alsjeblieft geduldig je beurt af.\n"
+                           f"Het is nu de beurt aan {bot.spel.beurt.name}")
+        elif str(error) == "game not started":
+            await ctx.send(f"Het spel is nog niet gestart. Gebruik eerst {PREFIX}{START} om het spel te starten.")
         else:
             with open('err.log', 'a') as f:
                 f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
