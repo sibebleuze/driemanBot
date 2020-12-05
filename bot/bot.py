@@ -26,7 +26,15 @@ bot.spel = None
 async def in_drieman_channel(ctx):
     # print(ctx.channel.name, CHANNEL, ctx.channel.category.name, CATEGORY, type(ctx.channel.name), type(CHANNEL),
     #       type(ctx.channel.category.name), type(CATEGORY))
-    return ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY
+    if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
+        raise commands.CheckFailure(message="wrong channel or category")
+    return True
+
+
+async def game_busy(ctx):
+    if not (bot.spel != None and type(bot.spel) == Game):
+        raise commands.CheckFailure(message="no active game")
+    return True
 
 
 @bot.event
@@ -71,26 +79,26 @@ async def join(ctx):
 
 
 @bot.command(name='opgeven', help='Jezelf verwijderen uit de lijst van actieve spelers')
+@commands.check(game_busy)
 async def quit(ctx):
-    if bot.spel:
-        if ctx.author.name in [player.name for player in bot.spel.players]:
-            response = bot.spel.remove_player(ctx.author.name)
-            if not bot.spel.players:
-                response += "\nDe laatste speler heeft het spel verlaten. Het spel is nu afgelopen.\n" \
-                            "Een nieuw spel kan begonnen worden als er opnieuw vier spelers zijn."
-                bot.spel = None
-                gc.collect()
-            elif len(bot.spel.players) <= 3:
-                response += "Er zijn niet genoeg spelers om verder te spelen.\n" \
-                            "Wacht tot er opnieuw genoeg spelers zijn of beëindig het spel.\n" \
-                            "Een nieuwe speler kan meedoen door '3man meedoen' te typen.\n" \
-                            "Het spel kan beëindigd worden door '3man stop' te typen."
-                bot.spel.started = False
-        else:
-            response = "Je zit nog niet in het spel. Je moet eerst meedoen voor je kan opgeven."
+    if ctx.author.name in [player.name for player in bot.spel.players]:
+        response = bot.spel.remove_player(ctx.author.name)
+        if not bot.spel.players:
+            response += "\nDe laatste speler heeft het spel verlaten. Het spel is nu afgelopen.\n" \
+                        "Een nieuw spel kan begonnen worden als er opnieuw vier spelers zijn."
+            bot.spel = None
+            gc.collect()
+        elif len(bot.spel.players) <= 3:
+            response += "Er zijn niet genoeg spelers om verder te spelen.\n" \
+                        "Wacht tot er opnieuw genoeg spelers zijn of beëindig het spel.\n" \
+                        "Een nieuwe speler kan meedoen door '3man meedoen' te typen.\n" \
+                        "Het spel kan beëindigd worden door '3man stop' te typen."
+            bot.spel.started = False
     else:
-        response = "Er zit nog helemaal niemand in het spel. \n" \
-                   "Wat voor dwaze dingen probeer jij uit te halen?"
+        response = "Je zit nog niet in het spel. Je moet eerst meedoen voor je kan opgeven."
+    # else:
+    #     response = "Er zit nog helemaal niemand in het spel. \n" \
+    #                "Wat voor dwaze dingen probeer jij uit te halen?"
     await ctx.channel.send(response)
 
 
@@ -142,22 +150,34 @@ async def roll(ctx):
     await ctx.send(response)
 
 
+@bot.command(name='tempus in', help='DriemanBot houdt tijdelijk bij hoeveel je moet drinken')
+async def temp_in(ctx):
+    await ctx.channel.send("NotImplementedError")
+
+
 @bot.event
-async def on_error(event, *args, **kwargs):
+async def on_error(error, *args, **kwargs):
     with open('err.log', 'a') as f:
-        f.write(str(sys.exc_info()) + "\n")
+        f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
 
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.errors.CheckFailure):
-        await ctx.send('Je kan dit commando hier niet gebruiken.\n'
-                       'Misschien heb je niet de juiste rechten of zit je per ongeluk in het verkeerde kanaal.\n'
-                       f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL} onder {CATEGORY}.\n'
-                       f'Je bevindt je nu in het kanaal {ctx.channel.name} onder {ctx.channel.category.name}.')
+    if isinstance(error, commands.errors.CheckFailure) and str(
+            error) != f"The global check functions for command {ctx.message.content[5:]} failed.":
+        if str(error) == "wrong channel or category":
+            await ctx.send(f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL} onder {CATEGORY}.\n'
+                           f'Je bevindt je nu in het kanaal {ctx.channel.name} onder {ctx.channel.category.name}.')
+        elif str(error) == "no active game":
+            await ctx.send("Er is geen spel bezig. Gebruik '3man meedoen' om als eerste mee te doen "
+                           "of ga met iemand anders zijn voeten spelen.")
+        else:
+            with open('err.log', 'a') as f:
+                f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
+            await ctx.send("Het commando '" + ctx.message.content + "' is gefaald. Contacteer de eigenaar van de bot.")
     else:
         with open('err.log', 'a') as f:
-            f.write(str(sys.exc_info()) + "\n")
+            f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
 
 
 bot.run(TOKEN)

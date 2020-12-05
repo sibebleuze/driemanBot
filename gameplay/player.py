@@ -5,6 +5,7 @@ class Player():
         self.name = name
         self.previous_player = self
         self.next_player = self
+        self.tempus = False
 
     def set_previous_player(self, player):
         assert type(player) == Player, f"Dit is geen speler, maar een {type(player)}."
@@ -13,3 +14,6 @@ class Player():
     def set_next_player(self, player):
         assert type(player) == Player, f"Dit is geen speler, maar een {type(player)}."
         self.next_player = player
+
+    def switch_tempus(self):
+        self.tempus = not self.tempus
