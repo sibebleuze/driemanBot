@@ -7,6 +7,7 @@ from .player import Player  # noqa
 
 load_dotenv()
 MIN_PLAYERS = int(os.getenv('MIN_PLAYERS'))
+TEMPUS = os.getenv('TEMPUS')
 
 
 class Game():
@@ -16,7 +17,7 @@ class Game():
         self.started = False
 
     def add_player(self, player):
-        assert type(player) == Player, f"Dit is geen speler, maar een {type(player)}."
+        assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
         assert player not in self.players, "Deze speler zit al in het spel."
         if self.players:
             player.set_previous_player(self.players[-1])
@@ -26,7 +27,7 @@ class Game():
         self.players.append(player)
 
     def remove_player(self, player):
-        assert type(player) == str, f"Dit is geen naam van een speler, maar een {type(player)}."
+        assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
         names = [player.name for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
@@ -45,9 +46,9 @@ class Game():
                    f"Wacht tot er nog {MIN_PLAYERS - len(self.players)} speler(s) meer meedoet/meedoen."
 
     def player_tempus(self, player, status):
-        assert type(player) == str, f"Dit is geen naam van een speler, maar een {type(player)}."
-        assert isinstance(status, str) and status in ["in",
-                                                      "ex"], f"Misbruik van tempus commando, verkeerde status {status}"
+        assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
+        assert isinstance(status, str) and status in ["in", "ex"], \
+            f"Misbruik van {TEMPUS} commando, verkeerde status {status}."  # normaal gezien gecheckt voor de functiecall
         names = [player.name for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
@@ -56,4 +57,4 @@ class Game():
             return f"{player.name} heeft nu tempus, tot zo!" if player.tempus \
                 else f"Welkom terug {player.name}, je staat nog {player.achterstand} drankeenheden achter."
         else:
-            return f"Je bent al in de modus 'tempus {status}'."
+            return f"Je bent al in de modus '{TEMPUS} {status}'."
