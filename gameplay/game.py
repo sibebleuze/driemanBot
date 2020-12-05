@@ -99,6 +99,7 @@ class Game():
         return 0 < player.uitdelen <= units
 
     def distributor(self, player, other_player, units):
+        # TO DO: lijnen hieronder herschrijven zodat other_players met getallen worden aangeduid
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
         assert isinstance(other_player, str), f"Dit is geen naam van een speler, maar een {type(other_player)}."
         assert isinstance(units, int), f"Dit is geen aantal drankeenheden, maar een {type(units)}."

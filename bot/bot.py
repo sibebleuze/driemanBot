@@ -13,7 +13,7 @@ from gameplay.player import Player  # noqa
 gc.enable()
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-# SERVER = os.getenv('TEST_SERVER') if os.getenv('TESTER') == 'on' else os.getenv('WINA_SERVER')
+SERVER = os.getenv('TEST_SERVER') if os.getenv('TESTER') == 'on' else os.getenv('WINA_SERVER')
 CHANNEL = os.getenv('DRIEMAN_CHANNEL')
 CATEGORY = os.getenv('DRIEMAN_CATEGORY')
 MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if os.getenv('TESTER') == 'on' else int(os.getenv('MIN_PLAYERS'))
@@ -45,11 +45,13 @@ async def game_busy(ctx):
 async def player_exists(ctx):
     if not ctx.author.name in [player.name for player in bot.spel.players]:
         raise commands.CheckFailure(message="player doesn't exist")
+    return True
 
 
+@commands.check(game_busy)
 async def wrong_tempus(ctx):
     # TO DO: check dat er geen nog uit te delen slokken over zijn voor deze speler
-    if ctx.message.content[-2:] not in ["in", "ex"]:
+    if ctx.message.content[len(PREFIX) + len(TEMPUS):] not in [" in", " ex"]:
         raise commands.CheckFailure(message="wrong tempus status")
     return True
 
@@ -68,8 +70,10 @@ async def not_your_turn(ctx):
 async def distribution(ctx):
     to_distribute = ctx.message.content[len(PREFIX) + len(UITDELEN) + 1:].split(" ")
     to_distribute = [x.split(":") for x in to_distribute]
-    if not all([isinstance(player, str) and isinstance(units, str) and all([x in "0123456789" for x in units]) and int(
-            units) == units for player, units in to_distribute]):
+    # TO DO: lijnen hieronder herschrijven zodat spelers met getallen worden aangeduid
+    if not all([isinstance(player, str) and isinstance(units, str) and all(
+            [x in "0123456789" for x in player + units]) and int(units) == units and int(player) == player for
+                player, units in to_distribute]):
         raise commands.CheckFailure(message="wrong distribute call")
     units = sum([units for _, units in to_distribute])
     if not bot.spel.check_player_distributor(ctx.author.name, units):
@@ -80,14 +84,16 @@ async def distribution(ctx):
 @bot.event
 async def on_ready():  # the output here is only visible at server level and not in Discord
     print(f'{bot.user.name} has connected to Discord!')
-    # server = discord.utils.get(bot.guilds, name=SERVER)
-    for server in bot.guilds:
-        print(
-            f'{bot.user.name} is connected to the following server:\n'
-            f'{server.name}(id: {server.id})'
-        )
-        members = '\n - '.join([member.name for member in server.members])
-        print(f'Visible Server Members:\n - {members}')
+    server = discord.utils.get(bot.guilds, name=SERVER)
+    print(
+        f'{bot.user.name} is connected to the following server:\n'
+        f'{server.name} (id: {server.id})'
+    )
+    channel = discord.utils.get(server.channels, name=CHANNEL)
+    print(f'{bot.user.name} is limited to the channel:\n'
+          f'{channel.name} (id: {channel.id})')
+    members = '\n - '.join([member.name for member in server.members])
+    print(f'Visible Server Members:\n - {members}')
 
 
 # helpdesk = "Overzicht van de DriemanBot commando's" \
@@ -181,8 +187,10 @@ async def roll(ctx):
                                "en deelt je dit mee aan het einde van je tempus.\n"
                                f"Gebruik '{PREFIX}{TEMPUS} in' om je tempus te beginnen en "
                                f"'{PREFIX}{TEMPUS} ex' om je tempus te eindigen en je achterstand te weten te komen.")
+@commands.check(game_busy)
 @commands.check(wrong_tempus)
-async def tempus(ctx):
+async def tempus(ctx, status: str):  # TO DO: gebruik status ipv ctx.message.content
+    # print(status)
     if ctx.author.name in [player.name for player in bot.spel.players]:
         response = bot.spel.player_tempus(ctx.author.name, ctx.message.content[-2:])
     else:
@@ -190,28 +198,40 @@ async def tempus(ctx):
     await ctx.channel.send(response)
 
 
-@bot.command(name=UITDELEN, help='Zeg aan wie je drankeenheden wilt uitdelen en hoeveel.\n'
-                                 f'Gebruik hiervoor het format {PREFIX}{UITDELEN} *speler1*:*drankhoeveelheid1* '
-                                 f'*speler2*:*drankhoeveelheid2* *speler3*:*drankhoeveelheid3* enz.')
+@bot.command(name=UITDELEN, help="Zeg aan wie je drankeenheden wilt uitdelen en hoeveel.\n"
+                                 f"Gebruik hiervoor het format {PREFIX}{UITDELEN} *speler1*:*drankhoeveelheid1* "
+                                 f"*speler2*:*drankhoeveelheid2* *speler3*:*drankhoeveelheid3* enz."
+                                 "Hierbij zijn zowel *speler* als *drankhoeveelheid* een geheel getal."
+                                 f"Om te zien welke speler welk getal heeft, kan je '{PREFIX}{SPELERS}' gebruiken.")
 @commands.check(game_busy)
 @commands.check(distribution)
+@commands.check(player_exists)
 async def distribute(ctx):
     to_distribute = ctx.message.content[len(PREFIX) + len(UITDELEN) + 1:].split(" ")
     to_distribute = [x.split(":") for x in to_distribute]
-
-    pass  # TO DO: een functie schrijven voor drank uit te delen
+    to_distribute = [(int(x), int(y)) for x, y in to_distribute]
+    # TO DO: lijnen hieronder herschrijven zodat spelers met getallen worden aangeduid
+    if all([player in range(len(bot.spel.players)) for player in [p for p, _ in to_distribute]]):
+        response = "\n".join([bot.spel.distributor(ctx.author.name, player, units) for player, units in to_distribute])
+    else:
+        response = "Een van de spelers die je probeert drank te geven bestaat niet. " \
+                   f"Er zijn maar {len(bot.spel.players)} spelers."
+    await ctx.channel.send(response)
+    pass  # TO DO: een functie schrijven om drank uit te delen
 
 
 @bot.event
 async def on_error(error, *args, **kwargs):
-    with open('err.log', 'a') as f:
+    with open('err.txt', 'a') as f:
         f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
+    server = discord.utils.get(bot.guilds, name=SERVER)
+    channel = discord.utils.get(server.channels, name=CHANNEL)
+    await channel.send("Er is een fout opgetreden. Contacteer de eigenaar van de DriemanBot.")
 
 
 @bot.event
 async def on_command_error(ctx, error):
-    if isinstance(error, commands.errors.CheckFailure) and str(
-            error) != f"The global check functions for command {ctx.message.content[len(PREFIX):]} failed.":
+    if isinstance(error, commands.errors.CheckFailure):
         if str(error) == "wrong channel or category":
             await ctx.send(f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL} onder {CATEGORY}.\n'
                            f'Je bevindt je nu in het kanaal {ctx.channel.name} onder {ctx.channel.category.name}.')
@@ -234,12 +254,19 @@ async def on_command_error(ctx, error):
         elif str(error) == "wrong distribute call":
             await ctx.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
         else:
-            with open('err.log', 'a') as f:
+            with open('err.txt', 'a') as f:
                 f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
-            await ctx.send("Het commando '" + ctx.message.content + "' is gefaald. Contacteer de eigenaar van de bot.")
-    else:
-        with open('err.log', 'a') as f:
+            await ctx.send(
+                f"Het commando '{ctx.message.content}' is gefaald. Contacteer de eigenaar van de DriemanBot.")
+    elif isinstance(error, commands.errors.CommandNotFound):
+        with open('err.txt', 'a') as f:
             f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
+        await ctx.send(f"Het commando '{ctx.message.content}' is onbekend. "
+                       "Contacteer de eigenaar van de DriemanBot als je denkt dat dit zou moeten werken.")
+    else:
+        with open('err.txt', 'a') as f:
+            f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
+        await ctx.send(f"Het commando '{ctx.message.content}' is gefaald. Contacteer de eigenaar van de DriemanBot.")
 
 
 bot.run(TOKEN)
