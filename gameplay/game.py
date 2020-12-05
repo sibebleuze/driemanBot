@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from player import Player  # noqa
+from .player import Player  # noqa
 
 
 class Game():

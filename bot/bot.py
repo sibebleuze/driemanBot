@@ -8,14 +8,15 @@ import discord  # noqa
 from discord.ext import commands  # noqa
 from dotenv import load_dotenv  # noqa
 
-from game import Game  # noqa
-from player import Player  # noqa
+from gameplay.game import Game  # noqa
+from gameplay.player import Player  # noqa
 
 gc.enable()
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 # GUILD = os.getenv('TEST_GUILD') if os.getenv('TESTER') == 'on' else os.getenv('WINA_GUILD')
 CHANNEL = os.getenv('DRIEMAN_CHANNEL')
+CATEGORY = os.getenv('DRIEMAN_CATEGORY')
 help_command = commands.DefaultHelpCommand(no_category="DriemanBot commando's", help='Toont dit bericht')
 bot = commands.Bot(command_prefix='3man ', help_command=help_command)
 bot.spel = None
@@ -23,7 +24,9 @@ bot.spel = None
 
 @bot.check
 async def in_drieman_channel(ctx):
-    return ctx.channel.name == CHANNEL
+    # print(ctx.channel.name, CHANNEL, ctx.channel.category.name, CATEGORY, type(ctx.channel.name), type(CHANNEL),
+    #       type(ctx.channel.category.name), type(CATEGORY))
+    return ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY
 
 
 @bot.event
@@ -142,7 +145,7 @@ async def roll(ctx):
 @bot.event
 async def on_error(event, *args, **kwargs):
     with open('err.log', 'a') as f:
-        f.write(str(sys.exc_info()))
+        f.write(str(sys.exc_info()) + "\n")
 
 
 @bot.event
@@ -150,10 +153,11 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
         await ctx.send('Je kan dit commando hier niet gebruiken.\n'
                        'Misschien heb je niet de juiste rechten of zit je per ongeluk in het verkeerde kanaal.\n'
-                       f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL}.')
+                       f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL} onder {CATEGORY}.\n'
+                       f'Je bevindt je nu in het kanaal {ctx.channel.name} onder {ctx.channel.category.name}.')
     else:
         with open('err.log', 'a') as f:
-            f.write(str(sys.exc_info()))
+            f.write(str(sys.exc_info()) + "\n")
 
 
 bot.run(TOKEN)
