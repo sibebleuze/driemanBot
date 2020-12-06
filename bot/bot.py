@@ -105,7 +105,7 @@ async def on_ready():  # the output here is only visible at server level and not
 
 @bot.command(name=REGELS, help='De link naar de regels printen')
 async def rules(ctx):
-    await ctx.send("Je kan de regels vinden op https://wina-gent.be/drieman.pdf.")
+    await ctx.channel.send("Je kan de regels vinden op https://wina-gent.be/drieman.pdf.")
 
 
 @bot.command(name=MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers\n"
@@ -204,7 +204,7 @@ async def who_is_here(ctx):
 @commands.check(not_your_turn)
 async def roll(ctx):
     response = bot.spel.roll(ctx.author.name)
-    await ctx.send(response)
+    await ctx.channel.send(response)
 
 
 @bot.command(name=TEMPUS, help="DriemanBot houdt tijdelijk bij hoeveel je moet drinken "
@@ -259,7 +259,8 @@ async def on_error(error, *args, **kwargs):
         f.write("\n\n\n\n\n")
     server = discord.utils.get(bot.guilds, name=SERVER)
     channel = discord.utils.get(server.channels, name=CHANNEL)
-    await channel.send("Er is een fout opgetreden. Contacteer de eigenaar van de DriemanBot.")
+    await channel.send(f"@here\n"
+                       "Er is een fout opgetreden. Contacteer de eigenaar van de DriemanBot.")
 
 
 @bot.event
@@ -272,57 +273,63 @@ async def on_command_error(ctx, error):
             traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
             f.write("\n\n\n\n\n")
 
+    server = discord.utils.get(bot.guilds, name=SERVER)
+    channel = discord.utils.get(server.channels, name=CHANNEL)
     if isinstance(error, commands.errors.CheckFailure):
         if str(error) == "wrong channel or category":
-            await ctx.send(f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL} onder {CATEGORY}.\n'
-                           f'Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.name} '
-                           f'onder {ctx.channel.category.name}. Dat gaat helaas niet.')
+            await channel.send(
+                f"{ctx.author.mention}\n"
+                f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention} onder '{CATEGORY}'.\n"
+                f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention} "
+                f"onder '{ctx.channel.category.name}'. Dat gaat helaas niet.")
         elif str(error) == "no active game":
-            await ctx.send(f"Er is geen spel bezig. Gebruik '{PREFIX}{MEEDOEN}' om als eerste mee te doen "
-                           "of ga met iemand anders zijn voeten spelen.")
+            await channel.send(f"Er is geen spel bezig. Gebruik '{PREFIX}{MEEDOEN}' om als eerste mee te doen "
+                               "of ga met iemand anders zijn voeten spelen.")
         elif str(error) == "game already started":
-            await ctx.send(f"Het spel is al begonnen. "
-                           f"Als je een nieuw spel wil beginnen, gebruik dan eerst '{PREFIX}{STOP}'.")
+            await channel.send(f"Het spel is al begonnen. "
+                               f"Als je een nieuw spel wil beginnen, gebruik dan eerst '{PREFIX}{STOP}'.")
         elif str(error) == "wrong nickname input":
-            await ctx.send(f"De bijnaam die je hebt ingegeven kan niet geaccepteerd worden, kies iets anders.")
+            await channel.send(f"De bijnaam die je hebt ingegeven kan niet geaccepteerd worden, kies iets anders.")
         elif str(error) == "player doesn't exist":
-            await ctx.send(f"Je speelt nog niet mee met dit spel. Gebruik '{PREFIX}{MEEDOEN}' om mee te doen.\n"
-                           f"Daarna kan je dit commando pas gebruiken.")
+            await channel.send(f"Je speelt nog niet mee met dit spel. Gebruik '{PREFIX}{MEEDOEN}' om mee te doen.\n"
+                               f"Daarna kan je dit commando pas gebruiken.")
         elif str(error) == "wrong tempus status":
-            await ctx.send(f"Je kan enkel '{PREFIX}{TEMPUS} in' of '{PREFIX}{TEMPUS} ex' gebruiken."
-                           f"'{ctx.message.content}' is geen geldig tempus commando.")
+            await channel.send(f"Je kan enkel '{PREFIX}{TEMPUS} in' of '{PREFIX}{TEMPUS} ex' gebruiken."
+                               f"'{ctx.message.content}' is geen geldig tempus commando.")
         elif str(error) == "not your turn":
-            await ctx.send("Je bent nu niet aan de beurt, wacht alsjeblieft geduldig je beurt af.\n"
-                           f"Het is nu de beurt aan {bot.spel.beurt.name}")
+            await channel.send("Je bent nu niet aan de beurt, wacht alsjeblieft geduldig je beurt af.\n"
+                               f"Het is nu de beurt aan {bot.spel.beurt.name}")
         elif str(error) == "game not started":
-            await ctx.send(f"Het spel is nog niet gestart. Gebruik eerst '{PREFIX}{START}' om het spel te starten.")
+            await channel.send(f"Het spel is nog niet gestart. Gebruik eerst '{PREFIX}{START}' om het spel te starten.")
         elif str(error) == "not enough drink units left":
-            await ctx.send("Je hebt niet genoeg drankeenheden meer over om uit te delen.")
+            await channel.send("Je hebt niet genoeg drankeenheden meer over om uit te delen.")
         elif str(error) == "too many drink units left":
-            await ctx.send("Er zijn nog drankeenheden over om uitgedeeld te worden. "
-                           "Deze moeten eerst uitgedeeld worden voor er kan worden verdergespeeld. "
-                           f"Gebruik '{PREFIX}{UITDELEN}' (met de juiste format) om drankeenheden uit te delen en "
-                           f"herhaal daarna je gewenste commando.")
+            await channel.send("Er zijn nog drankeenheden over om uitgedeeld te worden. "
+                               "Deze moeten eerst uitgedeeld worden voor er kan worden verdergespeeld. "
+                               f"Gebruik '{PREFIX}{UITDELEN}' (met de juiste format) om drankeenheden uit te delen en "
+                               f"herhaal daarna je gewenste commando.")
         elif str(error) == "wrong distribute call":
-            await ctx.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
+            await channel.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
         else:
             write_error()
-            await ctx.send(
+            await channel.send(
                 f"Het commando '{ctx.message.content}' is gefaald. Contacteer de eigenaar van de DriemanBot.")
     elif isinstance(error, commands.errors.CommandNotFound):
         write_error()
-        await ctx.send(f"Het commando '{ctx.message.content}' is onbekend. "
-                       "Contacteer de eigenaar van de DriemanBot als je denkt dat dit zou moeten werken.")
+        await channel.send(f"{ctx.author.mention}\n"
+                           f"Het commando '{ctx.message.content}' is onbekend. "
+                           "Contacteer de eigenaar van de DriemanBot als je denkt dat dit zou moeten werken.")
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         response = f"Het commando '{ctx.message.content}' heeft een verplicht argument dat hier ontbreekt."
         if ctx.message.content[:len(PREFIX) + len(UITDELEN)] == PREFIX + UITDELEN:
             response += "\nGebruik het juiste format om drankeenheden uit te delen, anders lukt het niet."
         elif ctx.message.content[:len(PREFIX) + len(TEMPUS)] == PREFIX + TEMPUS:
             response += f"\n'{ctx.message.content}' is geen geldig tempus commando."
-        await ctx.send(response)
+        await channel.send(response)
     else:
         write_error()
-        await ctx.send(
+        await channel.send(
+            f"{ctx.author.mention}\n"
             f"Het commando '{ctx.message.content}' is zwaar gefaald. Contacteer de eigenaar van de DriemanBot.")
 
 
