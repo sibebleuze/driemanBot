@@ -3,6 +3,7 @@ import gc  # noqa
 import os  # noqa
 import sys  # noqa
 import traceback  # noqa
+from datetime import datetime  # noqa
 
 import discord  # noqa
 from discord.ext import commands  # noqa
@@ -19,9 +20,9 @@ CHANNEL = os.getenv('DRIEMAN_CHANNEL')
 CATEGORY = os.getenv('DRIEMAN_CATEGORY')
 MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if os.getenv('TESTER') == 'on' else int(os.getenv('MIN_PLAYERS'))
 PREFIX = os.getenv('PREFIX')
-MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, WEGGAAN, UITDELEN = os.getenv('MEEDOEN'), os.getenv(
+MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, WEGGAAN, UITDELEN, BIJNAAM = os.getenv('MEEDOEN'), os.getenv(
     'REGELS'), os.getenv('ROL'), os.getenv('SPELERS'), os.getenv('START'), os.getenv('TEMPUS'), os.getenv(
-    'STOP'), os.getenv('WEGGAAN'), os.getenv('UITDELEN')
+    'STOP'), os.getenv('WEGGAAN'), os.getenv('UITDELEN'), os.getenv('BIJNAAM')
 
 
 class CustomHelpCommand(commands.DefaultHelpCommand):
@@ -120,8 +121,23 @@ async def join(ctx, bijnaam=None):
             raise commands.CheckFailure(message="wrong nickname input")
     player = Player(ctx.author.name, nickname=bijnaam)
     bot.spel.add_player(player)
-    response += f"Speler {player.name} is in het spel gekomen."
+    response += f"Speler {player.name}"
+    if player.nickname is not None:
+        response += f", ook gekend als {player.nickname},"
+    response += " is in het spel gekomen."
     await ctx.channel.send(response)
+
+
+@bot.command(name=BIJNAAM, help='Stel je bijnaam in als je dat nog gedaan had '
+                                'of wijzig je bijnaam als je een andere wilt.')
+@commands.check(game_busy)
+@commands.check(player_exists)
+async def nickname(ctx, *, bijnaam: str):
+    if " " in bijnaam:
+        raise commands.CheckFailure(message="wrong nickname input")
+    player = bot.spel.players[[player.name for player in bot.spel.players].index(ctx.author.name)]
+    player.set_nickname(bijnaam)
+    await ctx.channel.send(f"Speler {player.name} heeft nu de bijnaam {player.nickname}.")
 
 
 @bot.command(name=WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers')
@@ -172,9 +188,11 @@ async def start(ctx):
 @bot.command(name=SPELERS, help='Geeft een lijst van alle actieve spelers')
 @commands.check(game_busy)
 async def who_is_here(ctx):
-    response = "Speler:naam:te drinken eenheden:uit te delen eenheden"
+    response = "Speler:naam:te drinken eenheden:uit te delen eenheden:bijnaam (indien ingesteld)"
     for i, player in enumerate(bot.spel.players):
         response += f"\n{i}:{player.name}:{player.achterstand}:{player.uitdelen}"
+        if player.nickname is not None:
+            response += f":{player.nickname}"
     if bot.spel.started:
         response += f"Speler {bot.spel.beurt} is aan de beurt."
     await ctx.channel.send(response)
@@ -212,8 +230,8 @@ async def tempus(ctx, status: str):
 @commands.check(game_busy)
 @commands.check(player_exists)
 @commands.check(game_started)
-async def distribute(ctx, *, to_distribute):
-    to_distribute = [x.split(":") for x in to_distribute.split(" ")]
+async def distribute(ctx, *, uitgedeeld):
+    to_distribute = [x.split(":") for x in uitgedeeld.split(" ")]
     try:
         to_distribute = [(int(x), int(y)) for x, y in to_distribute]
     except Exception:
@@ -236,7 +254,9 @@ async def distribute(ctx, *, to_distribute):
 @bot.event
 async def on_error(error, *args, **kwargs):
     with open('err.txt', 'a') as f:
-        f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
+        f.write(f"{str(datetime.now())}\n{str(error)}\n")
+        traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
+        f.write("\n\n\n\n\n")
     server = discord.utils.get(bot.guilds, name=SERVER)
     channel = discord.utils.get(server.channels, name=CHANNEL)
     await channel.send("Er is een fout opgetreden. Contacteer de eigenaar van de DriemanBot.")
@@ -244,6 +264,14 @@ async def on_error(error, *args, **kwargs):
 
 @bot.event
 async def on_command_error(ctx, error):
+    def write_error():
+        with open('err.txt', 'a') as f:
+            f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
+                    f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
+                    f"{ctx.message.jump_url}\n{str(error)}\n")
+            traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
+            f.write("\n\n\n\n\n")
+
     if isinstance(error, commands.errors.CheckFailure):
         if str(error) == "wrong channel or category":
             await ctx.send(f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL} onder {CATEGORY}.\n'
@@ -278,13 +306,11 @@ async def on_command_error(ctx, error):
         elif str(error) == "wrong distribute call":
             await ctx.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
         else:
-            with open('err.txt', 'a') as f:
-                f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
+            write_error()
             await ctx.send(
                 f"Het commando '{ctx.message.content}' is gefaald. Contacteer de eigenaar van de DriemanBot.")
     elif isinstance(error, commands.errors.CommandNotFound):
-        with open('err.txt', 'a') as f:
-            f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
+        write_error()
         await ctx.send(f"Het commando '{ctx.message.content}' is onbekend. "
                        "Contacteer de eigenaar van de DriemanBot als je denkt dat dit zou moeten werken.")
     elif isinstance(error, commands.errors.MissingRequiredArgument):
@@ -295,12 +321,7 @@ async def on_command_error(ctx, error):
             response += f"\n'{ctx.message.content}' is geen geldig tempus commando."
         await ctx.send(response)
     else:
-        with open('err.txt', 'a') as f:
-            f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
-                    f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
-                    f"{ctx.message.jump_url}\n{str(error)}\n")
-            traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
-            f.write("\n\n\n\n\n")
+        write_error()
         await ctx.send(
             f"Het commando '{ctx.message.content}' is zwaar gefaald. Contacteer de eigenaar van de DriemanBot.")
 

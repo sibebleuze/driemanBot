@@ -44,3 +44,6 @@ class Player():
     def get_distribute(self, units):
         assert self.uitdelen >= 0, "Het spel is kapot, iemand heeft een negatief aantal uit te delen eenheden."
         self.uitdelen += units
+
+    def set_nickname(self, nickname):
+        self.nickname = nickname
