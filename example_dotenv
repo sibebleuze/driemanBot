@@ -1,8 +1,10 @@
 DISCORD_TOKEN=Nzg0NTAxNjAzNjQ1NjUzMDE4.X8qODQ.ZnHVnFEstq1qeF-vgW9U89Z1evk # not the actual token, just an example
+TESTER=on
 TEST_SERVER=DriemanBot testserver
 WINA_SERVER=WiNA
-TESTER=on
+TEST_CHANNEL=driemantestchannel
 DRIEMAN_CHANNEL=driemannen
+TEST_CATEGORY=driemantestcategorie
 DRIEMAN_CATEGORY=WINA BAR
 MIN_PLAYERS=4
 MIN_TESTERS=2

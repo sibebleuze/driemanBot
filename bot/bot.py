@@ -17,8 +17,8 @@ load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 TESTER = os.getenv('TESTER') == 'on'
 SERVER = os.getenv('TEST_SERVER') if TESTER else os.getenv('WINA_SERVER')
-CHANNEL = os.getenv('DRIEMAN_CHANNEL')
-CATEGORY = os.getenv('DRIEMAN_CATEGORY')
+CHANNEL = os.getenv('TEST_CHANNEL') if TESTER else os.getenv('DRIEMAN_CHANNEL')
+CATEGORY = os.getenv('TEST_CATEGORY') if TESTER else os.getenv('DRIEMAN_CATEGORY')
 MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if TESTER else int(os.getenv('MIN_PLAYERS'))
 PREFIX = os.getenv('PREFIX')
 MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, WEGGAAN, UITDELEN, BIJNAAM = os.getenv('MEEDOEN'), os.getenv(
