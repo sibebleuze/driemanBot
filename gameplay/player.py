@@ -27,14 +27,14 @@ class Player():
             self.drinking()
         return response
 
-    def add_to_drink(self, units):  # TO DO: deze functie gebruiken ipv de eigenschappen zelf aan te passen
+    def add_to_drink(self, units):
         self.achterstand += units
         self.total += units
 
     def drinking(self):
         self.achterstand = 0
 
-    def distribute(self, player, units):  # TO DO: deze functie gebruiken ipv de eigenschappen zelf aan te passen
+    def distribute(self, player, units):
         assert self.uitdelen >= units, \
             "Niet genoeg drankeenheden over om uit te delen"  # normaal gecheckt voor functiecall
         player.acherstand += units

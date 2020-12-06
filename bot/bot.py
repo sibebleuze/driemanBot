@@ -18,19 +18,32 @@ CHANNEL = os.getenv('DRIEMAN_CHANNEL')
 CATEGORY = os.getenv('DRIEMAN_CATEGORY')
 MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if os.getenv('TESTER') == 'on' else int(os.getenv('MIN_PLAYERS'))
 PREFIX = os.getenv('PREFIX')
-MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, OPGEVEN, UITDELEN = os.getenv('MEEDOEN'), os.getenv(
+MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, WEGGAAN, UITDELEN = os.getenv('MEEDOEN'), os.getenv(
     'REGELS'), os.getenv('ROL'), os.getenv('SPELERS'), os.getenv('START'), os.getenv('TEMPUS'), os.getenv(
-    'STOP'), os.getenv('OPGEVEN'), os.getenv('UITDELEN')
-help_command = commands.DefaultHelpCommand(no_category="DriemanBot commando's")
-# TO DO: verander ending note van help met get_ending_note(self) uit DefaultHelpCommand
+    'STOP'), os.getenv('WEGGAAN'), os.getenv('UITDELEN')
+
+
+class CustomHelpCommand(commands.DefaultHelpCommand):
+    def __init__(self, **options):
+        super().__init__(**options)
+        self.no_category = options.pop('no_category', "DriemanBot commando's")
+        self.command_attrs = attrs = options.pop('command_attrs', {})
+        attrs.setdefault('name', 'help')
+        attrs.setdefault('help', 'Toon dit bericht')
+
+    def get_ending_note(self):
+        """:class:`str`: Returns help command's ending note. This is mainly useful to override for i18n purposes."""
+        command_name = self.invoked_with
+        return "Typ {0}{1} commando voor meer info over een commando.\n".format(self.clean_prefix, command_name)
+
+
+help_command = CustomHelpCommand()
 bot = commands.Bot(command_prefix=PREFIX, help_command=help_command)
 bot.spel = None
 
 
 @bot.check
 async def in_drieman_channel(ctx):
-    # print(ctx.channel.name, CHANNEL, ctx.channel.category.name, CATEGORY, type(ctx.channel.name), type(CHANNEL),
-    #       type(ctx.channel.category.name), type(CATEGORY))
     if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
         raise commands.CheckFailure(message="wrong channel or category")
     return True
@@ -66,9 +79,10 @@ async def player_exists(ctx):
 @commands.check(game_busy)
 @commands.check(game_started)
 async def not_your_turn(ctx):
-    # TO DO: check dat er geen nog uit te delen slokken over zijn
     if ctx.author.name != bot.spel.beurt.name:
         raise commands.CheckFailure(message="not your turn")
+    if not all([bot.spel.check_player_distributor(player.name, 0, zero_allowed=True) for player in bot.spel.players]):
+        raise commands.CheckFailure("too many drink units left")
     return True
 
 
@@ -87,19 +101,6 @@ async def on_ready():  # the output here is only visible at server level and not
     print(f'Visible Server Members:\n - {members}')
 
 
-# helpdesk = "Overzicht van de DriemanBot commando's" \
-#            "=======================================" \
-#            "help - deze hulp weergeven" \
-#            "regels - de link naar de regels printen" \
-#            "meedoen - jezelf toevoegen aan de lijst van actieve spelers" \
-#            "start - een nieuw spel starten als er genoeg spelers actief zijn" \
-#            "rol - rol de dobbelsteen als het jouw beurt is" \
-#            "opgeven - jezelf uit de lijst van actieve spelers verwijderen" \
-#            "uitdelen - een aantal slokken uitdelen aan een bepaalde persoon" \
-#            "tempus in - de drieman bot houdt tijdelijk voor je bij hoeveel je moet drinken" \
-#            "tempus ex - de drieman bot deelt mee hoeveel je moet drinken na je pauze" \
-#            "spelers - geeft een lijst terug van alle actieve spelers"
-# create more commands to handle all possible 3man inputs
 @bot.command(name=REGELS, help='De link naar de regels printen')
 async def rules(ctx):
     await ctx.send("Je kan de regels vinden op https://wina-gent.be/drieman.pdf.")
@@ -117,7 +118,7 @@ async def join(ctx):
     await ctx.channel.send(response)
 
 
-@bot.command(name=OPGEVEN, help='Jezelf verwijderen uit de lijst van actieve spelers')
+@bot.command(name=WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers')
 @commands.check(game_busy)
 @commands.check(player_exists)
 async def leave(ctx):
@@ -150,7 +151,7 @@ async def stop(ctx):
                    f"kan het commando '{PREFIX}{STOP}' pas gebruikt worden " \
                    f"als er minder dan {MIN_PLAYERS} overblijven.\n" \
                    "Als je echt wil stoppen, " \
-                   f"zal/zullen nog {len(bot.spel.players) - (MIN_PLAYERS - 1)} speler(s) het moeten opgeven."
+                   f"zal/zullen nog {len(bot.spel.players) - (MIN_PLAYERS - 1)} speler(s) het spel moeten verlaten."
     await ctx.channel.send(response)
 
 
@@ -165,7 +166,9 @@ async def start(ctx):
 @bot.command(name=SPELERS, help='Geeft een lijst van alle actieve spelers')
 @commands.check(game_busy)
 async def who_is_here(ctx):
-    response = "\n".join([f"Speler {i}: " + player.name for i, player in enumerate(bot.spel.players)])
+    response = "Speler:naam:te drinken eenheden:uit te delen eenheden"
+    for i, player in enumerate(bot.spel.players):
+        response += f"\n{i}:{player.name}:{player.achterstand}:{player.uitdelen}"
     await ctx.channel.send(response)
 
 
@@ -185,7 +188,8 @@ async def roll(ctx):
 @commands.check(game_busy)
 @commands.check(player_exists)
 async def tempus(ctx, status: str):
-    # TO DO: check dat er geen nog uit te delen slokken over zijn voor deze speler
+    if not bot.spel.check_player_distributor(ctx.author.name, 0, zero_allowed=True):
+        raise commands.CheckFailure("too many drink units left")
     if status not in ["in", "ex"]:
         raise commands.CheckFailure(message="wrong tempus status")
     response = bot.spel.player_tempus(ctx.author.name, status)
@@ -193,21 +197,23 @@ async def tempus(ctx, status: str):
 
 
 @bot.command(name=UITDELEN, help="Zeg aan wie je drankeenheden wilt uitdelen en hoeveel.\n"
-                                 f"Gebruik hiervoor het format '{PREFIX}{UITDELEN}' *speler1*:*drankhoeveelheid1* "
-                                 f"*speler2*:*drankhoeveelheid2* *speler3*:*drankhoeveelheid3* enz.\n"
-                                 "Hierbij zijn zowel *speler* als *drankhoeveelheid* een geheel getal.\n"
+                                 f"Gebruik hiervoor het format '{PREFIX}{UITDELEN} speler1:drankhoeveelheid1 "
+                                 f"speler2:drankhoeveelheid2 speler3:drankhoeveelheid3' enz. "
+                                 "Hierbij zijn zowel speler als drankhoeveelheid een positief geheel getal.\n"
                                  f"Om te zien welke speler welk getal heeft, kan je '{PREFIX}{SPELERS}' gebruiken.")
 @commands.check(game_busy)
 @commands.check(player_exists)
 @commands.check(game_started)
 async def distribute(ctx, *, to_distribute):
     to_distribute = [x.split(":") for x in to_distribute.split(" ")]
-    if not all([isinstance(player, str) and isinstance(units, str) and (player + units).isnumeric() and float(
-            units).is_integer() and int(units) >= 0 and float(player).is_integer() for player, units in to_distribute]):
+    try:
+        to_distribute = [(int(x), int(y)) for x, y in to_distribute]
+    except:
         raise commands.CheckFailure(message="wrong distribute call")
-    to_distribute = [(int(x), int(y)) for x, y in to_distribute]
-    units = sum([units for _, units in to_distribute])
-    if not bot.spel.check_player_distributor(ctx.author.name, units):
+    if not all([[units > 0 for _, units in to_distribute]]):
+        raise commands.CheckFailure(message="wrong distribute call")
+    all_units = sum([units for _, units in to_distribute])
+    if not bot.spel.check_player_distributor(ctx.author.name, all_units, zero_allowed=False):
         raise commands.CheckFailure(message="not enough drink units left")
     if all([player in range(len(bot.spel.players)) for player in [p for p, _ in to_distribute]]):
         for player, units in to_distribute:
@@ -253,6 +259,11 @@ async def on_command_error(ctx, error):
             await ctx.send(f"Het spel is nog niet gestart. Gebruik eerst '{PREFIX}{START}' om het spel te starten.")
         elif str(error) == "not enough drink units left":
             await ctx.send("Je hebt niet genoeg drankeenheden meer over om uit te delen.")
+        elif str(error) == "too many drink units left":
+            await ctx.send("Er zijn nog drankeenheden over om uitgedeeld te worden. "
+                           "Deze moeten eerst uitgedeeld worden voor er kan worden verdergespeeld. "
+                           f"Gebruik '{PREFIX}{UITDELEN}' (met de juiste format) om drankeenheden uit te delen en "
+                           f"herhaal daarna je gewenste commando.")
         elif str(error) == "wrong distribute call":
             await ctx.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
         else:

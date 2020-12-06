@@ -8,6 +8,7 @@ from .player import Player  # noqa
 
 load_dotenv()
 MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if os.getenv('TESTER') == 'on' else int(os.getenv('MIN_PLAYERS'))
+PREFIX = os.getenv('PREFIX')
 TEMPUS = os.getenv('TEMPUS')
 
 
@@ -38,8 +39,12 @@ class Game():
         player.next_player.set_previous_player(player.previous_player)
         player.previous_player.set_next_player(player.next_player)
         self.players.remove(player)
-        # TO DO: meegeven hoeveel drankeenheden nog gedronken moeten worden (als deze persoon tempus heeft bvb.)
-        return f"Speler {player.name} heeft het opgegeven. Slaap zacht jonge vriend."
+        response = ""
+        if player.achterstand != 0:
+            response += f"Speler {player.name}, je hoort nog {player.achterstand} drankeenheden te drinken.\n"
+            player.drinking()
+        response += f"Speler {player.name} heeft het spel verlaten. Slaap zacht jonge geest."
+        return response
 
     def start_game(self):
         if len(self.players) >= MIN_PLAYERS:
@@ -71,6 +76,8 @@ class Game():
         player = self.players[names.index(player)]
         assert player == self.beurt, \
             "Een speler die niet aan de beurt is heeft geworpen."  # normaal gezien gecheckt voor de functiecall
+        if player.tempus:
+            return f"Je bent nog in modus '{TEMPUS} in'. Gebruik '{PREFIX}{TEMPUS} ex' om verder te spelen."
         dice = [random.randint(1, 6) for _ in range(2)]
         if 3 in dice:
             if self.drieman is not None:
@@ -102,15 +109,17 @@ class Game():
                 else:
                     response += f"Speler {player.name} moet {player.achterstand} drankeenheden drinken.\n"
                     player.drinking()
+            if player.uitdelen > 0:
+                response += f"Speler {player.name} moet nog {player.uitdelen} drankeenheden uitdelen.\n"
         response += "Dat is alles, drinken maar!"
         return response
 
-    def check_player_distributor(self, player, units):
+    def check_player_distributor(self, player, units, zero_allowed):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
         names = [player.name for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
-        return 0 < player.uitdelen <= units
+        return player.uitdelen <= units and (player.uitdelen > 0 or zero_allowed)
 
     def distributor(self, player, other_player, units):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
