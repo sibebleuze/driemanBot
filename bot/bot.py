@@ -36,9 +36,11 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
         super().__init__(**options)
 
     def get_ending_note(self):
-        """:class:`str`: Returns help command's ending note. This is mainly useful to override for i18n purposes."""
         command_name = self.invoked_with
         return "Typ {0}{1} commando voor meer info over een commando.\n".format(self.clean_prefix, command_name)
+
+    def command_not_found(self, string):
+        return f"De DriemanBot heeft geen commando '{string}'."
 
 
 help_command = CustomHelpCommand()
@@ -104,24 +106,13 @@ async def on_ready():  # the output here is only visible at server level and not
     members = '\n - '.join([member.name for member in server.members])
     print(f'Visible Server Members:\n - {members}')
 
-    # embed = discord.Embed(title='Overzicht actieve spelers')
-    # embed.add_field(name='Speler: 1', value="Naam: sibebleuze\nTe drinken: 0\nUit te delen: 0", inline=True)
-    # embed.add_field(name='Speler: 2', value="Naam: sibebleuze\nBijnaam: Sibe\nTe drinken: 0\nUit te delen: 0", inline=True)
-    # embed.add_field(name='Speler: 3', value="Naam: sibebleuze\nBijnaam: Sibe\nTe drinken: 0\nUit te delen: 0", inline=True)
-    # embed.add_field(name='Speler: 4', value="Naam: sibebleuze\nTe drinken: 0\nUit te delen: 0", inline=True)
-    # embed.add_field(name='Speler: 5', value="Naam: sibebleuze\nTe drinken: 0\nUit te delen: 0", inline=True)
-    # response = ""
-    # await channel.send(response, embed=embed)
-    # await channel.send(embed=embed)
-    # await channel.send(response, embed=embed)
-    # await channel.send(embed=embed)
 
-@bot.command(name=REGELS, help='De link naar de regels printen')
+@bot.command(name=REGELS, help='De link naar de regels printen.')
 async def rules(ctx):
     await ctx.channel.send("Je kan de regels vinden op https://wina-gent.be/drieman.pdf.")
 
 
-@bot.command(name=MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers\n"
+@bot.command(name=MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers.\n"
                                 "Met het optionele argument 'bijnaam' kan je een bijnaam "
                                 "bestaande uit 1 woord kiezen.")
 async def join(ctx, bijnaam=None):
@@ -153,7 +144,7 @@ async def nickname(ctx, *, bijnaam: str):
     await ctx.channel.send(f"Speler {player.name} heeft nu de bijnaam {player.nickname}.")
 
 
-@bot.command(name=WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers')
+@bot.command(name=WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers.')
 @commands.check(game_busy)
 @commands.check(player_exists)
 async def leave(ctx):
@@ -172,7 +163,7 @@ async def leave(ctx):
     await ctx.channel.send(response)
 
 
-@bot.command(name=STOP, help=f'Stop het spel als er minder dan {MIN_PLAYERS} actieve spelers zijn')
+@bot.command(name=STOP, help=f'Stop het spel als er minder dan {MIN_PLAYERS} actieve spelers zijn.')
 @commands.check(game_busy)
 async def stop(ctx):
     if len(bot.spel.players) < MIN_PLAYERS:
@@ -190,7 +181,7 @@ async def stop(ctx):
     await ctx.channel.send(response)
 
 
-@bot.command(name=START, help='Start het spel, werkt enkel als er voldoende spelers zijn')
+@bot.command(name=START, help='Start het spel als er voldoende spelers zijn.')
 @commands.check(game_busy)
 @commands.check(game_not_started)
 async def start(ctx):
@@ -198,7 +189,7 @@ async def start(ctx):
     await ctx.channel.send(response)
 
 
-@bot.command(name=SPELERS, help='Geeft een lijst van alle actieve spelers')
+@bot.command(name=SPELERS, help='Geeft een lijst van alle actieve spelers.')
 @commands.check(game_busy)
 async def who_is_here(ctx):
     embed = discord.Embed(title='Overzicht actieve spelers')
@@ -209,7 +200,8 @@ async def who_is_here(ctx):
     response = "" if not bot.spel.started else f"Speler {bot.spel.beurt} is aan de beurt."
     await ctx.channel.send(response, embed=embed)
 
-@bot.command(name=ROL, help='Rol de dobbelsteen als het jouw beurt is')
+
+@bot.command(name=ROL, help='Rol de dobbelsteen als het jouw beurt is.')
 @commands.check(game_busy)
 @commands.check(game_started)
 @commands.check(not_your_turn)
@@ -219,7 +211,7 @@ async def roll(ctx):
 
 
 @bot.command(name=TEMPUS, help="DriemanBot houdt tijdelijk bij hoeveel je moet drinken "
-                               "en deelt je dit mee aan het einde van je tempus.\n"
+                               "en deelt je dit mee aan het einde van je tempus. "
                                f"Gebruik '{PREFIX}{TEMPUS} in' om je tempus te beginnen en "
                                f"'{PREFIX}{TEMPUS} ex' om je tempus te eindigen en je achterstand te weten te komen.")
 @commands.check(game_busy)
@@ -233,10 +225,10 @@ async def tempus(ctx, status: str):
     await ctx.channel.send(response)
 
 
-@bot.command(name=UITDELEN, help="Zeg aan wie je drankeenheden wilt uitdelen en hoeveel.\n"
-                                 f"Gebruik hiervoor het format '{PREFIX}{UITDELEN} speler1:drankhoeveelheid1 "
-                                 f"speler2:drankhoeveelheid2 speler3:drankhoeveelheid3' enz. "
-                                 "Hierbij zijn zowel speler als drankhoeveelheid een positief geheel getal.\n"
+@bot.command(name=UITDELEN, help="Zeg aan wie je drankeenheden wilt uitdelen en hoeveel. "
+                                 f"Gebruik hiervoor het format\n'{PREFIX}{UITDELEN} speler1:drankhoeveelheid1 "
+                                 f"speler2:drankhoeveelheid2 speler3:drankhoeveelheid3'\nenz. "
+                                 "Hierbij zijn zowel speler als drankhoeveelheid een positief geheel getal. "
                                  f"Om te zien welke speler welk getal heeft, kan je '{PREFIX}{SPELERS}' gebruiken.")
 @commands.check(game_busy)
 @commands.check(player_exists)
@@ -340,10 +332,17 @@ async def on_command_error(ctx, error):
             await channel.send(
                 f"Het commando '{ctx.message.content}' is gefaald. Contacteer de eigenaar van de DriemanBot.")
     elif isinstance(error, commands.errors.CommandNotFound):
-        write_error()
-        await channel.send(f"{ctx.author.mention}\n"
-                           f"Het commando '{ctx.message.content}' is onbekend. "
-                           "Contacteer de eigenaar van de DriemanBot als je denkt dat dit zou moeten werken.")
+        if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
+            await channel.send(
+                f"{ctx.author.mention}\n"
+                f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention} onder '{CATEGORY}'.\n"
+                f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention} "
+                f"onder '{ctx.channel.category.name}'. Dat gaat helaas niet.")
+        else:
+            write_error()
+            await channel.send(f"{ctx.author.mention}\n"
+                               f"Het commando '{ctx.message.content}' is onbekend. "
+                               "Contacteer de eigenaar van de DriemanBot als je denkt dat dit zou moeten werken.")
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         response = f"Het commando '{ctx.message.content}' heeft een verplicht argument dat hier ontbreekt."
         if ctx.message.content[:len(PREFIX) + len(UITDELEN)] == PREFIX + UITDELEN:
