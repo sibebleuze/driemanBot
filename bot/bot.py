@@ -15,10 +15,11 @@ from gameplay.player import Player  # noqa
 gc.enable()
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-SERVER = os.getenv('TEST_SERVER') if os.getenv('TESTER') == 'on' else os.getenv('WINA_SERVER')
+TESTER = os.getenv('TESTER') == 'on'
+SERVER = os.getenv('TEST_SERVER') if TESTER else os.getenv('WINA_SERVER')
 CHANNEL = os.getenv('DRIEMAN_CHANNEL')
 CATEGORY = os.getenv('DRIEMAN_CATEGORY')
-MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if os.getenv('TESTER') == 'on' else int(os.getenv('MIN_PLAYERS'))
+MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if TESTER else int(os.getenv('MIN_PLAYERS'))
 PREFIX = os.getenv('PREFIX')
 MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, WEGGAAN, UITDELEN, BIJNAAM = os.getenv('MEEDOEN'), os.getenv(
     'REGELS'), os.getenv('ROL'), os.getenv('SPELERS'), os.getenv('START'), os.getenv('TEMPUS'), os.getenv(
@@ -268,7 +269,7 @@ async def on_error(error, *args, **kwargs):
         try:
             traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
         except Exception as exc:
-            if os.getenv('TESTER') == 'on':
+            if TESTER:
                 raise exc
             else:
                 f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
@@ -290,7 +291,7 @@ async def on_command_error(ctx, error):
             try:
                 traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
             except Exception as exc:
-                if os.getenv('TESTER') == 'on':
+                if TESTER:
                     raise exc
                 else:
                     f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
