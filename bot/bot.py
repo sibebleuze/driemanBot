@@ -131,7 +131,7 @@ async def join(ctx, bijnaam=None):
     await ctx.channel.send(response)
 
 
-@bot.command(name=BIJNAAM, help='Stel je bijnaam in als je dat nog gedaan had '
+@bot.command(name=BIJNAAM, help='Stel je bijnaam in als je dat nog niet gedaan had '
                                 'of wijzig je bijnaam als je een andere wilt.')
 @commands.check(game_busy)
 @commands.check(player_exists)

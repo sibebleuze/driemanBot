@@ -46,7 +46,7 @@ class Game():
             response += f"Speler {player.name}, je hoort nog {player.achterstand} drankeenheden te drinken.\n"
             player.drinking()
         response += f"Speler {player.name} heeft in totaal {player.totaal} drankeenheden gedronken.\n" \
-                    f"Speler {player.name} heeft het spel verlaten. Slaap zacht jonge geest."
+                    f"Speler {player.name} heeft het spel verlaten. Slaap zacht kameraad."
         return response
 
     def start_game(self):
