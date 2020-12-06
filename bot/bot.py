@@ -288,4 +288,4 @@ async def on_command_error(ctx, error):
             f"Het commando '{ctx.message.content}' is zwaar gefaald. Contacteer de eigenaar van de DriemanBot.")
 
 
-bot.run(TOKEN)
+bot.run(TOKEN)  # TODO: test de DriemanBot met een aantal echte spelers
