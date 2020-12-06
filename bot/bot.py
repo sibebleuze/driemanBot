@@ -107,13 +107,18 @@ async def rules(ctx):
     await ctx.send("Je kan de regels vinden op https://wina-gent.be/drieman.pdf.")
 
 
-@bot.command(name=MEEDOEN, help='Jezelf toevoegen aan de lijst van actieve spelers')
-async def join(ctx):
+@bot.command(name=MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers\n"
+                                "Met het optionele argument 'bijnaam' kan je een bijnaam "
+                                "bestaande uit 1 woord kiezen.")
+async def join(ctx, bijnaam=None):
     response = ""
     if not bot.spel:
         bot.spel = Game()
         response += "Er is een nieuw spel begonnen.\n"
-    player = Player(ctx.author.name)
+    if bijnaam is not None:
+        if not (isinstance(bijnaam, str) and " " not in bijnaam):
+            raise commands.CheckFailure(message="wrong nickname input")
+    player = Player(ctx.author.name, nickname=bijnaam)
     bot.spel.add_player(player)
     response += f"Speler {player.name} is in het spel gekomen."
     await ctx.channel.send(response)
@@ -170,6 +175,8 @@ async def who_is_here(ctx):
     response = "Speler:naam:te drinken eenheden:uit te delen eenheden"
     for i, player in enumerate(bot.spel.players):
         response += f"\n{i}:{player.name}:{player.achterstand}:{player.uitdelen}"
+    if bot.spel.started:
+        response += f"Speler {bot.spel.beurt} is aan de beurt."
     await ctx.channel.send(response)
 
 
@@ -240,13 +247,16 @@ async def on_command_error(ctx, error):
     if isinstance(error, commands.errors.CheckFailure):
         if str(error) == "wrong channel or category":
             await ctx.send(f'De DriemanBot kan enkel gebruikt worden in het kanaal {CHANNEL} onder {CATEGORY}.\n'
-                           f'Je bevindt je nu in het kanaal {ctx.channel.name} onder {ctx.channel.category.name}.')
+                           f'Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.name} '
+                           f'onder {ctx.channel.category.name}. Dat gaat helaas niet.')
         elif str(error) == "no active game":
             await ctx.send(f"Er is geen spel bezig. Gebruik '{PREFIX}{MEEDOEN}' om als eerste mee te doen "
                            "of ga met iemand anders zijn voeten spelen.")
         elif str(error) == "game already started":
             await ctx.send(f"Het spel is al begonnen. "
                            f"Als je een nieuw spel wil beginnen, gebruik dan eerst '{PREFIX}{STOP}'.")
+        elif str(error) == "wrong nickname input":
+            await ctx.send(f"De bijnaam die je hebt ingegeven kan niet geaccepteerd worden, kies iets anders.")
         elif str(error) == "player doesn't exist":
             await ctx.send(f"Je speelt nog niet mee met dit spel. Gebruik '{PREFIX}{MEEDOEN}' om mee te doen.\n"
                            f"Daarna kan je dit commando pas gebruiken.")

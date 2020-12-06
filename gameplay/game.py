@@ -36,6 +36,8 @@ class Game():
         player = self.players[names.index(player)]
         if player == self.drieman:
             self.drieman = None
+        if self.beurt == player:
+            self.beurt = player.next_player
         player.next_player.set_previous_player(player.previous_player)
         player.previous_player.set_next_player(player.next_player)
         self.players.remove(player)
@@ -43,7 +45,8 @@ class Game():
         if player.achterstand != 0:
             response += f"Speler {player.name}, je hoort nog {player.achterstand} drankeenheden te drinken.\n"
             player.drinking()
-        response += f"Speler {player.name} heeft het spel verlaten. Slaap zacht jonge geest."
+        response += f"Speler {player.name} heeft in totaal {player.totaal} drankeenheden gedronken.\n" \
+                    f"Speler {player.name} heeft het spel verlaten. Slaap zacht jonge geest."
         return response
 
     def start_game(self):

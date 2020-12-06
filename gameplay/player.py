@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 class Player():
-    def __init__(self, name):
+    def __init__(self, name, nickname=None):
         self.name = name
+        self.nickname = nickname
         self.previous_player = self
         self.next_player = self
         self.tempus = False
         self.achterstand = 0
-        self.total = 0
+        self.totaal = 0
         self.uitdelen = 0
 
     def set_previous_player(self, player):
@@ -29,7 +30,7 @@ class Player():
 
     def add_to_drink(self, units):
         self.achterstand += units
-        self.total += units
+        self.totaal += units
 
     def drinking(self):
         self.achterstand = 0
