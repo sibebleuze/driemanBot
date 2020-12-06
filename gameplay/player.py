@@ -20,11 +20,26 @@ class Player():
 
     def switch_tempus(self):
         self.tempus = not self.tempus
+        if self.tempus:
+            response = f"{self.name} heeft nu tempus, tot zo!"
+        else:
+            response = f"Welkom terug {self.name}, je moet nu {self.achterstand} drankeenheden drinken."
+            self.drinking()
+        return response
 
     def add_to_drink(self, units):  # TO DO: deze functie gebruiken ipv de eigenschappen zelf aan te passen
         self.achterstand += units
         self.total += units
 
+    def drinking(self):
+        self.achterstand = 0
+
     def distribute(self, player, units):  # TO DO: deze functie gebruiken ipv de eigenschappen zelf aan te passen
+        assert self.uitdelen >= units, \
+            "Niet genoeg drankeenheden over om uit te delen"  # normaal gecheckt voor functiecall
         player.acherstand += units
         self.uitdelen -= units
+
+    def get_distribute(self, units):
+        assert self.uitdelen >= 0, "Het spel is kapot, iemand heeft een negatief aantal uit te delen eenheden."
+        self.uitdelen += units
