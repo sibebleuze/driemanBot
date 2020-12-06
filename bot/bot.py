@@ -273,7 +273,7 @@ async def on_error(error, *args, **kwargs):
     server = discord.utils.get(bot.guilds, name=SERVER)
     channel = discord.utils.get(server.channels, name=CHANNEL)
     await channel.send(f"@here\n"
-                       "Er is een fout opgetreden. Contacteer de eigenaar van de DriemanBot.")
+                       "Er is een fout opgetreden. Contacteer de beheerder van de DriemanBot.")
 
 
 @bot.event
@@ -328,7 +328,7 @@ async def on_command_error(ctx, error):
         else:
             write_error()
             await channel.send(
-                f"Het commando '{ctx.message.content}' is gefaald. Contacteer de eigenaar van de DriemanBot.")
+                f"Het commando '{ctx.message.content}' is gefaald. Contacteer de beheerder van de DriemanBot.")
     elif isinstance(error, commands.errors.CommandNotFound):
         if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
             await channel.send(
@@ -340,7 +340,7 @@ async def on_command_error(ctx, error):
             write_error()
             await channel.send(f"{ctx.author.mention}\n"
                                f"Het commando '{ctx.message.content}' is onbekend. "
-                               "Contacteer de eigenaar van de DriemanBot als je denkt dat dit zou moeten werken.")
+                               "Contacteer de beheerder van de DriemanBot als je denkt dat dit zou moeten werken.")
     elif isinstance(error, commands.errors.MissingRequiredArgument):
         response = f"Het commando '{ctx.message.content}' heeft een verplicht argument dat hier ontbreekt."
         if ctx.message.content[:len(PREFIX) + len(UITDELEN)] == PREFIX + UITDELEN:
@@ -352,7 +352,7 @@ async def on_command_error(ctx, error):
         write_error()
         await channel.send(
             f"{ctx.author.mention}\n"
-            f"Het commando '{ctx.message.content}' is zwaar gefaald. Contacteer de eigenaar van de DriemanBot.")
+            f"Het commando '{ctx.message.content}' is zwaar gefaald. Contacteer de beheerder van de DriemanBot.")
 
 
 bot.run(TOKEN)  # TODO: test de DriemanBot met een aantal echte spelers
