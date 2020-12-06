@@ -92,17 +92,18 @@ async def not_your_turn(ctx):
 
 @bot.event
 async def on_ready():  # the output here is only visible at server level and not in Discord
-    print(f'{bot.user.name} has connected to Discord!')
-    server = discord.utils.get(bot.guilds, name=SERVER)
-    print(
-        f'{bot.user.name} is connected to the following server:\n'
-        f'{server.name} (id: {server.id})'
-    )
-    channel = discord.utils.get(server.channels, name=CHANNEL)
-    print(f'{bot.user.name} is limited to the channel:\n'
-          f'{channel.name} (id: {channel.id})')
-    members = '\n - '.join([member.name for member in server.members])
-    print(f'Visible Server Members:\n - {members}')
+    if TESTER:
+        print(f'{bot.user.name} has connected to Discord!')
+        server = discord.utils.get(bot.guilds, name=SERVER)
+        print(
+            f'{bot.user.name} is connected to the following server:\n'
+            f'{server.name} (id: {server.id})'
+        )
+        channel = discord.utils.get(server.channels, name=CHANNEL)
+        print(f'{bot.user.name} is limited to the channel:\n'
+              f'{channel.name} (id: {channel.id})')
+        members = '\n - '.join([member.name for member in server.members])
+        print(f'Visible Server Members:\n - {members}')
 
 
 @bot.command(name=REGELS, help='De link naar de regels printen.')
