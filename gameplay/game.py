@@ -114,7 +114,7 @@ class Game():
                     response += f"Speler {player.name} moet {player.achterstand} drankeenheden drinken.\n"
                     player.drinking()
             if player.uitdelen > 0:
-                response += f"Speler {player.name} mag {player.uitdelen} drankeenheden uitdelen.\n"
+                response += f"Speler {player.name} mag (in totaal) nog {player.uitdelen} drankeenheden uitdelen.\n"
         response += "Dat is alles, drinken maar!"
         return response
 
