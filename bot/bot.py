@@ -328,7 +328,8 @@ async def on_command_error(ctx, error):
         else:
             write_error()
             await channel.send(
-                f"Het commando '{ctx.message.content}' is gefaald. Contacteer de beheerder van de DriemanBot.")
+                f"Het commando '{ctx.message.content}' heeft iets raar gedaan. "
+                f"Contacteer de beheerder van de DriemanBot.")
     elif isinstance(error, commands.errors.CommandNotFound):
         if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
             await channel.send(
@@ -352,7 +353,7 @@ async def on_command_error(ctx, error):
         write_error()
         await channel.send(
             f"{ctx.author.mention}\n"
-            f"Het commando '{ctx.message.content}' is zwaar gefaald. Contacteer de beheerder van de DriemanBot.")
+            f"Het commando '{ctx.message.content}' is gefaald. Contacteer de beheerder van de DriemanBot.")
 
 
 bot.run(TOKEN)  # TODO: test de DriemanBot met een aantal echte spelers
