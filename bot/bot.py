@@ -2,6 +2,7 @@
 import gc  # noqa
 import os  # noqa
 import sys  # noqa
+import traceback  # noqa
 
 import discord  # noqa
 from discord.ext import commands  # noqa
@@ -208,7 +209,7 @@ async def distribute(ctx, *, to_distribute):
     to_distribute = [x.split(":") for x in to_distribute.split(" ")]
     try:
         to_distribute = [(int(x), int(y)) for x, y in to_distribute]
-    except:
+    except Exception:
         raise commands.CheckFailure(message="wrong distribute call")
     if not all([[units > 0 for _, units in to_distribute]]):
         raise commands.CheckFailure(message="wrong distribute call")
@@ -280,10 +281,16 @@ async def on_command_error(ctx, error):
         response = f"Het commando '{ctx.message.content}' heeft een verplicht argument dat hier ontbreekt."
         if ctx.message.content[:len(PREFIX) + len(UITDELEN)] == PREFIX + UITDELEN:
             response += "\nGebruik het juiste format om drankeenheden uit te delen, anders lukt het niet."
+        elif ctx.message.content[:len(PREFIX) + len(TEMPUS)] == PREFIX + TEMPUS:
+            response += f"\n'{ctx.message.content}' is geen geldig tempus commando."
         await ctx.send(response)
     else:
         with open('err.txt', 'a') as f:
-            f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
+            f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
+                    f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
+                    f"{ctx.message.jump_url}\n{str(error)}\n")
+            traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
+            f.write("\n\n\n\n\n")
         await ctx.send(
             f"Het commando '{ctx.message.content}' is zwaar gefaald. Contacteer de eigenaar van de DriemanBot.")
 
