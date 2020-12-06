@@ -103,6 +103,17 @@ async def on_ready():  # the output here is only visible at server level and not
     members = '\n - '.join([member.name for member in server.members])
     print(f'Visible Server Members:\n - {members}')
 
+    # embed = discord.Embed(title='Overzicht actieve spelers')
+    # embed.add_field(name='Speler: 1', value="Naam: sibebleuze\nTe drinken: 0\nUit te delen: 0", inline=True)
+    # embed.add_field(name='Speler: 2', value="Naam: sibebleuze\nBijnaam: Sibe\nTe drinken: 0\nUit te delen: 0", inline=True)
+    # embed.add_field(name='Speler: 3', value="Naam: sibebleuze\nBijnaam: Sibe\nTe drinken: 0\nUit te delen: 0", inline=True)
+    # embed.add_field(name='Speler: 4', value="Naam: sibebleuze\nTe drinken: 0\nUit te delen: 0", inline=True)
+    # embed.add_field(name='Speler: 5', value="Naam: sibebleuze\nTe drinken: 0\nUit te delen: 0", inline=True)
+    # response = ""
+    # await channel.send(response, embed=embed)
+    # await channel.send(embed=embed)
+    # await channel.send(response, embed=embed)
+    # await channel.send(embed=embed)
 
 @bot.command(name=REGELS, help='De link naar de regels printen')
 async def rules(ctx):
@@ -189,15 +200,13 @@ async def start(ctx):
 @bot.command(name=SPELERS, help='Geeft een lijst van alle actieve spelers')
 @commands.check(game_busy)
 async def who_is_here(ctx):
-    response = "Speler:naam:te drinken eenheden:uit te delen eenheden:bijnaam (indien ingesteld)"
+    embed = discord.Embed(title='Overzicht actieve spelers')
     for i, player in enumerate(bot.spel.players):
-        response += f"\n{i}:{player.name}:{player.achterstand}:{player.uitdelen}"
-        if player.nickname is not None:
-            response += f":{player.nickname}"
-    if bot.spel.started:
-        response += f"Speler {bot.spel.beurt} is aan de beurt."
-    await ctx.channel.send(response)
-
+        embed.add_field(name=f'Speler: {i}',
+                        value=f"Naam: {player.name}\nBijnaam: {player.nickname if player.nickname is not None else ''}\nTe drinken: {player.achterstand}\nUit te delen: {player.uitdelen}",
+                        inline=True)
+    response = "" if not bot.spel.started else f"Speler {bot.spel.beurt} is aan de beurt."
+    await ctx.channel.send(response, embed=embed)
 
 @bot.command(name=ROL, help='Rol de dobbelsteen als het jouw beurt is')
 @commands.check(game_busy)
@@ -256,7 +265,14 @@ async def distribute(ctx, *, uitgedeeld):
 async def on_error(error, *args, **kwargs):
     with open('err.txt', 'a') as f:
         f.write(f"{str(datetime.now())}\n{str(error)}\n")
-        traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
+        try:
+            traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
+        except Exception as exc:
+            if os.getenv('TESTER') == 'on':
+                raise exc
+            else:
+                f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
+                traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
         f.write("\n\n\n\n\n")
     server = discord.utils.get(bot.guilds, name=SERVER)
     channel = discord.utils.get(server.channels, name=CHANNEL)
@@ -271,7 +287,14 @@ async def on_command_error(ctx, error):
             f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
                     f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
                     f"{ctx.message.jump_url}\n{str(error)}\n")
-            traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
+            try:
+                traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
+            except Exception as exc:
+                if os.getenv('TESTER') == 'on':
+                    raise exc
+                else:
+                    f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
+                    traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
             f.write("\n\n\n\n\n")
 
     server = discord.utils.get(bot.guilds, name=SERVER)
