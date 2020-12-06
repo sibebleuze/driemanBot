@@ -27,11 +27,12 @@ MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, WEGGAAN, UITDELEN, BIJNAAM =
 
 class CustomHelpCommand(commands.DefaultHelpCommand):
     def __init__(self, **options):
+        options['no_category'] = "DriemanBot commando's"
+        options['verify_checks'] = False
+        options['command_attrs'] = options.get('command_attrs', {})
+        options['command_attrs'].setdefault('name', 'help')
+        options['command_attrs'].setdefault('help', 'Toon dit bericht')
         super().__init__(**options)
-        self.no_category = options.pop('no_category', "DriemanBot commando's")
-        self.command_attrs = attrs = options.pop('command_attrs', {})
-        attrs.setdefault('name', 'help')
-        attrs.setdefault('help', 'Toon dit bericht')
 
     def get_ending_note(self):
         """:class:`str`: Returns help command's ending note. This is mainly useful to override for i18n purposes."""
