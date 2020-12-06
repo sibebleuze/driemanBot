@@ -193,7 +193,9 @@ async def who_is_here(ctx):
     embed = discord.Embed(title='Overzicht actieve spelers')
     for i, player in enumerate(bot.spel.players):
         embed.add_field(name=f'Speler: {i}',
-                        value=f"Naam: {player.name}\nBijnaam: {player.nickname if player.nickname is not None else ''}\nTe drinken: {player.achterstand}\nUit te delen: {player.uitdelen}",
+                        value=f"Naam: {player.name}\nBijnaam: "
+                              f"{player.nickname if player.nickname is not None else ''}\nTe drinken: "
+                              f"{player.achterstand}\nUit te delen: {player.uitdelen}",
                         inline=True)
     response = ""
     if bot.spel.started:
