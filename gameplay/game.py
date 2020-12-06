@@ -21,7 +21,7 @@ class Game():
 
     def add_player(self, player):
         assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
-        assert player not in self.players, "Deze speler zit al in het spel."
+        assert player.name not in [player.name for player in self.players], "Deze speler zit al in het spel."
         if self.players:
             player.set_previous_player(self.players[-1])
             self.players[-1].set_next_player(player)

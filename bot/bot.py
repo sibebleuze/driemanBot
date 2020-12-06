@@ -123,6 +123,8 @@ async def join(ctx, bijnaam=None):
         if not (isinstance(bijnaam, str) and " " not in bijnaam):
             raise commands.CheckFailure(message="wrong nickname input")
     player = Player(ctx.author.name, nickname=bijnaam)
+    if player.name in [player.name for player in bot.spel.players]:
+        raise commands.CheckFailure(message="player already exists")
     bot.spel.add_player(player)
     response += f"Speler {player.name}"
     if player.nickname is not None:
@@ -313,6 +315,9 @@ async def on_command_error(ctx, error):
         elif str(error) == "player doesn't exist":
             await channel.send(f"Je speelt nog niet mee met dit spel. Gebruik '{PREFIX}{MEEDOEN}' om mee te doen.\n"
                                f"Daarna kan je dit commando pas gebruiken.")
+        elif str(error) == "player already exists":
+            await channel.send(f"Je speelt al mee met dit spel. Gebruik '{PREFIX}{WEGGAAN}' om weg te gaan.\n"
+                               f"Daarna kan je dit commando pas opnieuw gebruiken.")
         elif str(error) == "wrong tempus status":
             await channel.send(f"Je kan enkel '{PREFIX}{TEMPUS} in' of '{PREFIX}{TEMPUS} ex' gebruiken."
                                f"'{ctx.message.content}' is geen geldig tempus commando.")
