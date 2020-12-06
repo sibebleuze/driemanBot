@@ -21,7 +21,8 @@ PREFIX = os.getenv('PREFIX')
 MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, OPGEVEN, UITDELEN = os.getenv('MEEDOEN'), os.getenv(
     'REGELS'), os.getenv('ROL'), os.getenv('SPELERS'), os.getenv('START'), os.getenv('TEMPUS'), os.getenv(
     'STOP'), os.getenv('OPGEVEN'), os.getenv('UITDELEN')
-help_command = commands.DefaultHelpCommand(no_category="DriemanBot commando's", help='Toont dit bericht')
+help_command = commands.DefaultHelpCommand(no_category="DriemanBot commando's")
+# TO DO: verander ending note van help met get_ending_note(self) uit DefaultHelpCommand
 bot = commands.Bot(command_prefix=PREFIX, help_command=help_command)
 bot.spel = None
 
@@ -42,42 +43,32 @@ async def game_busy(ctx):
 
 
 @commands.check(game_busy)
+async def game_not_started(ctx):
+    if bot.spel.started:
+        raise commands.CheckFailure(message="game already started")
+    return True
+
+
+@commands.check(game_busy)
+async def game_started(ctx):
+    if not bot.spel.started:
+        raise commands.CheckFailure(message="game not started")
+    return True
+
+
+@commands.check(game_busy)
 async def player_exists(ctx):
-    if not ctx.author.name in [player.name for player in bot.spel.players]:
+    if ctx.author.name not in [player.name for player in bot.spel.players]:
         raise commands.CheckFailure(message="player doesn't exist")
     return True
 
 
 @commands.check(game_busy)
-async def wrong_tempus(ctx):
-    # TO DO: check dat er geen nog uit te delen slokken over zijn voor deze speler
-    if ctx.message.content[len(PREFIX) + len(TEMPUS):] not in [" in", " ex"]:
-        raise commands.CheckFailure(message="wrong tempus status")
-    return True
-
-
-@commands.check(game_busy)
+@commands.check(game_started)
 async def not_your_turn(ctx):
     # TO DO: check dat er geen nog uit te delen slokken over zijn
-    if not bot.spel.started:
-        raise commands.CheckFailure(message="game not started")
     if ctx.author.name != bot.spel.beurt.name:
         raise commands.CheckFailure(message="not your turn")
-    return True
-
-
-@commands.check(game_busy)
-async def distribution(ctx):
-    to_distribute = ctx.message.content[len(PREFIX) + len(UITDELEN) + 1:].split(" ")
-    to_distribute = [x.split(":") for x in to_distribute]
-    # TO DO: lijnen hieronder herschrijven zodat spelers met getallen worden aangeduid
-    if not all([isinstance(player, str) and isinstance(units, str) and all(
-            [x in "0123456789" for x in player + units]) and int(units) == units and int(player) == player for
-                player, units in to_distribute]):
-        raise commands.CheckFailure(message="wrong distribute call")
-    units = sum([units for _, units in to_distribute])
-    if not bot.spel.check_player_distributor(ctx.author.name, units):
-        raise commands.CheckFailure(message="not enough drink units left")
     return True
 
 
@@ -116,12 +107,14 @@ async def rules(ctx):
 
 @bot.command(name=MEEDOEN, help='Jezelf toevoegen aan de lijst van actieve spelers')
 async def join(ctx):
+    response = ""
     if not bot.spel:
         bot.spel = Game()
-        await ctx.channel.send("Er is een nieuw spel begonnen.")
+        response += "Er is een nieuw spel begonnen.\n"
     player = Player(ctx.author.name)
     bot.spel.add_player(player)
-    await ctx.channel.send(f"Speler {player.name} is in het spel gekomen.")
+    response += f"Speler {player.name} is in het spel gekomen."
+    await ctx.channel.send(response)
 
 
 @bot.command(name=OPGEVEN, help='Jezelf verwijderen uit de lijst van actieve spelers')
@@ -163,6 +156,7 @@ async def stop(ctx):
 
 @bot.command(name=START, help='Start het spel, werkt enkel als er voldoende spelers zijn')
 @commands.check(game_busy)
+@commands.check(game_not_started)
 async def start(ctx):
     response = bot.spel.start_game()
     await ctx.channel.send(response)
@@ -177,9 +171,10 @@ async def who_is_here(ctx):
 
 @bot.command(name=ROL, help='Rol de dobbelsteen als het jouw beurt is')
 @commands.check(game_busy)
+@commands.check(game_started)
 @commands.check(not_your_turn)
 async def roll(ctx):
-    response = bot.spel.roll()
+    response = bot.spel.roll(ctx.author.name)
     await ctx.send(response)
 
 
@@ -188,36 +183,40 @@ async def roll(ctx):
                                f"Gebruik '{PREFIX}{TEMPUS} in' om je tempus te beginnen en "
                                f"'{PREFIX}{TEMPUS} ex' om je tempus te eindigen en je achterstand te weten te komen.")
 @commands.check(game_busy)
-@commands.check(wrong_tempus)
-async def tempus(ctx, status: str):  # TO DO: gebruik status ipv ctx.message.content
-    # print(status)
-    if ctx.author.name in [player.name for player in bot.spel.players]:
-        response = bot.spel.player_tempus(ctx.author.name, ctx.message.content[-2:])
-    else:
-        response = "Je zit nog niet in het spel. Je moet eerst meedoen voor je een tempus kan nemen."
+@commands.check(player_exists)
+async def tempus(ctx, status: str):
+    # TO DO: check dat er geen nog uit te delen slokken over zijn voor deze speler
+    if status not in ["in", "ex"]:
+        raise commands.CheckFailure(message="wrong tempus status")
+    response = bot.spel.player_tempus(ctx.author.name, status)
     await ctx.channel.send(response)
 
 
 @bot.command(name=UITDELEN, help="Zeg aan wie je drankeenheden wilt uitdelen en hoeveel.\n"
-                                 f"Gebruik hiervoor het format {PREFIX}{UITDELEN} *speler1*:*drankhoeveelheid1* "
-                                 f"*speler2*:*drankhoeveelheid2* *speler3*:*drankhoeveelheid3* enz."
-                                 "Hierbij zijn zowel *speler* als *drankhoeveelheid* een geheel getal."
+                                 f"Gebruik hiervoor het format '{PREFIX}{UITDELEN}' *speler1*:*drankhoeveelheid1* "
+                                 f"*speler2*:*drankhoeveelheid2* *speler3*:*drankhoeveelheid3* enz.\n"
+                                 "Hierbij zijn zowel *speler* als *drankhoeveelheid* een geheel getal.\n"
                                  f"Om te zien welke speler welk getal heeft, kan je '{PREFIX}{SPELERS}' gebruiken.")
 @commands.check(game_busy)
-@commands.check(distribution)
 @commands.check(player_exists)
-async def distribute(ctx):
-    to_distribute = ctx.message.content[len(PREFIX) + len(UITDELEN) + 1:].split(" ")
-    to_distribute = [x.split(":") for x in to_distribute]
+@commands.check(game_started)
+async def distribute(ctx, *, to_distribute):
+    to_distribute = [x.split(":") for x in to_distribute.split(" ")]
+    if not all([isinstance(player, str) and isinstance(units, str) and (player + units).isnumeric() and float(
+            units).is_integer() and int(units) >= 0 and float(player).is_integer() for player, units in to_distribute]):
+        raise commands.CheckFailure(message="wrong distribute call")
     to_distribute = [(int(x), int(y)) for x, y in to_distribute]
-    # TO DO: lijnen hieronder herschrijven zodat spelers met getallen worden aangeduid
+    units = sum([units for _, units in to_distribute])
+    if not bot.spel.check_player_distributor(ctx.author.name, units):
+        raise commands.CheckFailure(message="not enough drink units left")
     if all([player in range(len(bot.spel.players)) for player in [p for p, _ in to_distribute]]):
-        response = "\n".join([bot.spel.distributor(ctx.author.name, player, units) for player, units in to_distribute])
+        for player, units in to_distribute:
+            bot.spel.distributor(ctx.author.name, player, units)
+        response = bot.spel.drink()
     else:
         response = "Een van de spelers die je probeert drank te geven bestaat niet. " \
-                   f"Er zijn maar {len(bot.spel.players)} spelers."
+                   f"Er zijn maar {len(bot.spel.players)} spelers. Probeer opnieuw."
     await ctx.channel.send(response)
-    pass  # TO DO: een functie schrijven om drank uit te delen
 
 
 @bot.event
@@ -238,9 +237,12 @@ async def on_command_error(ctx, error):
         elif str(error) == "no active game":
             await ctx.send(f"Er is geen spel bezig. Gebruik '{PREFIX}{MEEDOEN}' om als eerste mee te doen "
                            "of ga met iemand anders zijn voeten spelen.")
+        elif str(error) == "game already started":
+            await ctx.send(f"Het spel is al begonnen. "
+                           f"Als je een nieuw spel wil beginnen, gebruik dan eerst '{PREFIX}{STOP}'.")
         elif str(error) == "player doesn't exist":
             await ctx.send(f"Je speelt nog niet mee met dit spel. Gebruik '{PREFIX}{MEEDOEN}' om mee te doen.\n"
-                           f"Daarna kan je dit commando pas gebruiken")
+                           f"Daarna kan je dit commando pas gebruiken.")
         elif str(error) == "wrong tempus status":
             await ctx.send(f"Je kan enkel '{PREFIX}{TEMPUS} in' of '{PREFIX}{TEMPUS} ex' gebruiken."
                            f"'{ctx.message.content}' is geen geldig tempus commando.")
@@ -263,10 +265,16 @@ async def on_command_error(ctx, error):
             f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
         await ctx.send(f"Het commando '{ctx.message.content}' is onbekend. "
                        "Contacteer de eigenaar van de DriemanBot als je denkt dat dit zou moeten werken.")
+    elif isinstance(error, commands.errors.MissingRequiredArgument):
+        response = f"Het commando '{ctx.message.content}' heeft een verplicht argument dat hier ontbreekt."
+        if ctx.message.content[:len(PREFIX) + len(UITDELEN)] == PREFIX + UITDELEN:
+            response += "\nGebruik het juiste format om drankeenheden uit te delen, anders lukt het niet."
+        await ctx.send(response)
     else:
         with open('err.txt', 'a') as f:
             f.write(str(error) + "\n" + str(sys.exc_info()) + "\n\n")
-        await ctx.send(f"Het commando '{ctx.message.content}' is gefaald. Contacteer de eigenaar van de DriemanBot.")
+        await ctx.send(
+            f"Het commando '{ctx.message.content}' is zwaar gefaald. Contacteer de eigenaar van de DriemanBot.")
 
 
 bot.run(TOKEN)

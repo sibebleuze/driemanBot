@@ -7,7 +7,7 @@ from dotenv import load_dotenv  # noqa
 from .player import Player  # noqa
 
 load_dotenv()
-MIN_PLAYERS = int(os.getenv('MIN_PLAYERS'))
+MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if os.getenv('TESTER') == 'on' else int(os.getenv('MIN_PLAYERS'))
 TEMPUS = os.getenv('TEMPUS')
 
 
@@ -66,7 +66,12 @@ class Game():
             return f"Je bent al in de modus '{TEMPUS} {status}'."
 
     def roll(self, player):
-        assert player == self.beurt, "Een speler die niet aan de beurt is heeft geworpen."
+        assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
+        names = [player.name for player in self.players]
+        assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
+        player = self.players[names.index(player)]
+        assert player == self.beurt, \
+            "Een speler die niet aan de beurt is heeft geworpen."  # normaal gezien gecheckt voor de functiecall
         dice = [random.randint(1, 6) for _ in range(2)]
         if 3 in dice:
             if self.drieman is not None:
@@ -99,12 +104,14 @@ class Game():
         return 0 < player.uitdelen <= units
 
     def distributor(self, player, other_player, units):
-        # TO DO: lijnen hieronder herschrijven zodat other_players met getallen worden aangeduid
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
-        assert isinstance(other_player, str), f"Dit is geen naam van een speler, maar een {type(other_player)}."
+        assert isinstance(other_player, int), f"Dit is geen nummer van een speler, maar een {type(other_player)}."
         assert isinstance(units, int), f"Dit is geen aantal drankeenheden, maar een {type(units)}."
         names = [player.name for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
-        assert other_player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
+        assert other_player in range(
+            len(self.players)), "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
-        other_player = self.players[names.index(other_player)]
+        other_player = self.players[other_player]
+        player.distribute(other_player, units)
+        return True
