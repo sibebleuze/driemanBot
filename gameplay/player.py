@@ -38,7 +38,7 @@ class Player():
     def distribute(self, player, units):
         assert self.uitdelen >= units, \
             "Niet genoeg drankeenheden over om uit te delen"  # normaal gecheckt voor functiecall
-        player.acherstand += units
+        player.achterstand += units
         self.uitdelen -= units
 
     def get_distribute(self, units):

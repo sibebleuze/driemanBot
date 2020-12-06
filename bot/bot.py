@@ -87,8 +87,6 @@ async def player_exists(ctx):
 async def not_your_turn(ctx):
     if ctx.author.name != bot.spel.beurt.name:
         raise commands.CheckFailure(message="not your turn")
-    if not all([bot.spel.check_player_distributor(player.name, 0, zero_allowed=True) for player in bot.spel.players]):
-        raise commands.CheckFailure("too many drink units left")
     return True
 
 
@@ -197,7 +195,11 @@ async def who_is_here(ctx):
         embed.add_field(name=f'Speler: {i}',
                         value=f"Naam: {player.name}\nBijnaam: {player.nickname if player.nickname is not None else ''}\nTe drinken: {player.achterstand}\nUit te delen: {player.uitdelen}",
                         inline=True)
-    response = "" if not bot.spel.started else f"Speler {bot.spel.beurt} is aan de beurt."
+    response = ""
+    if bot.spel.started:
+        response += f"Speler {bot.spel.beurt.name} is aan de beurt."
+    if bot.spel.drieman:
+        response += f" Speler {bot.spel.drieman.name} is op dit moment drieman."
     await ctx.channel.send(response, embed=embed)
 
 
@@ -217,8 +219,6 @@ async def roll(ctx):
 @commands.check(game_busy)
 @commands.check(player_exists)
 async def tempus(ctx, status: str):
-    if not bot.spel.check_player_distributor(ctx.author.name, 0, zero_allowed=True):
-        raise commands.CheckFailure("too many drink units left")
     if status not in ["in", "ex"]:
         raise commands.CheckFailure(message="wrong tempus status")
     response = bot.spel.player_tempus(ctx.author.name, status)
@@ -320,11 +320,6 @@ async def on_command_error(ctx, error):
             await channel.send(f"Het spel is nog niet gestart. Gebruik eerst '{PREFIX}{START}' om het spel te starten.")
         elif str(error) == "not enough drink units left":
             await channel.send("Je hebt niet genoeg drankeenheden meer over om uit te delen.")
-        elif str(error) == "too many drink units left":
-            await channel.send("Er zijn nog drankeenheden over om uitgedeeld te worden. "
-                               "Deze moeten eerst uitgedeeld worden voor er kan worden verdergespeeld. "
-                               f"Gebruik '{PREFIX}{UITDELEN}' (met de juiste format) om drankeenheden uit te delen en "
-                               f"herhaal daarna je gewenste commando.")
         elif str(error) == "wrong distribute call":
             await channel.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
         else:

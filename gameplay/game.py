@@ -82,22 +82,23 @@ class Game():
         if player.tempus:
             return f"Je bent nog in modus '{TEMPUS} in'. Gebruik '{PREFIX}{TEMPUS} ex' om verder te spelen."
         dice = [random.randint(1, 6) for _ in range(2)]
+        response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
         if 3 in dice:
             if self.drieman is not None:
                 self.drieman.add_to_drink(dice.count(3))
         if sum(dice) == 3:
             self.drieman = player
+            response += f"Speler {player.name} is nu drieman.\n"
         elif sum(dice) == 6:
             player.previous_player.add_to_drink(1)
         elif sum(dice) == 7:
             player.add_to_drink(1)
         elif sum(dice) == 8:
             player.next_player.add_to_drink(1)
-        elif dice[0] == dice[1]:
+        if dice[0] == dice[1]:
             player.uitdelen += dice[0]
         if not (sum(dice) in range(6, 8 + 1) or dice[0] == dice[1]):
             self.beurt = self.beurt.next_player
-        response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
         response += self.drink()
         return response
 
@@ -113,7 +114,7 @@ class Game():
                     response += f"Speler {player.name} moet {player.achterstand} drankeenheden drinken.\n"
                     player.drinking()
             if player.uitdelen > 0:
-                response += f"Speler {player.name} moet nog {player.uitdelen} drankeenheden uitdelen.\n"
+                response += f"Speler {player.name} mag {player.uitdelen} drankeenheden uitdelen.\n"
         response += "Dat is alles, drinken maar!"
         return response
 
