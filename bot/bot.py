@@ -9,22 +9,17 @@ import discord  # noqa
 from discord.ext import commands  # noqa
 from dotenv import load_dotenv  # noqa
 
+from gameplay.constants import *
 from gameplay.game import Game  # noqa
 from gameplay.player import Player  # noqa
 
 gc.enable()
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
-TESTER = os.getenv('TESTER') == 'on'
-SERVER = os.getenv('TEST_SERVER') if TESTER else os.getenv('WINA_SERVER')
-CHANNEL = os.getenv('TEST_CHANNEL') if TESTER else os.getenv('DRIEMAN_CHANNEL')
-CATEGORY = os.getenv('TEST_CATEGORY') if TESTER else os.getenv('DRIEMAN_CATEGORY')
-MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if TESTER else int(os.getenv('MIN_PLAYERS'))
-PREFIX = os.getenv('PREFIX')
-MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, WEGGAAN, UITDELEN, BIJNAAM = os.getenv('MEEDOEN'), os.getenv(
-    'REGELS'), os.getenv('ROL'), os.getenv('SPELERS'), os.getenv('START'), os.getenv('TEMPUS'), os.getenv(
-    'STOP'), os.getenv('WEGGAAN'), os.getenv('UITDELEN'), os.getenv('BIJNAAM')
-DUBBELDRIEMAN = os.getenv('DUBBELDRIEMAN')
+SERVER = TEST_SERVER if TESTER else WINA_SERVER
+CHANNEL = TEST_CHANNEL if TESTER else DRIEMAN_CHANNEL
+CATEGORY = TEST_CATEGORY if TESTER else DRIEMAN_CATEGORY
+MIN_PLAYERS = MIN_TESTERS if TESTER else MIN_PLAYERS
 
 
 class CustomHelpCommand(commands.DefaultHelpCommand):
