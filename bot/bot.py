@@ -266,12 +266,16 @@ async def distribute(ctx, *, uitgedeeld):
     await ctx.channel.send(response)
 
 
-@bot.command(name='dubbeldrieman', pass_context=True, hidden=True,
-             help=f"Als dit commando geactiveerd wordt met '{PREFIX}{DUBBELDRIEMAN} in', "
-                  "en een speler werpt een 2 en een 1 als deze al drieman is, "
-                  "dan drinkt de speler vanaf dan 2 drankeenheden per 3 op de dobbelstenen. "
-                  f"Met '{PREFIX}{DUBBELDRIEMAN} ex' kan dit gedeactiveerd worden.\n"
-                  "Je kan wel maximaal dubbeldrieman worden, er is niet zoiets als trippeldrieman bijvoorbeeld.")
+"""
+help=f"Als dit commando geactiveerd wordt met '{PREFIX}{DUBBELDRIEMAN} in', "
+      "en een speler werpt een 2 en een 1 als deze al drieman is, "
+      "dan drinkt de speler vanaf dan 2 drankeenheden per 3 op de dobbelstenen. "
+      f"Met '{PREFIX}{DUBBELDRIEMAN} ex' kan dit gedeactiveerd worden.\n"
+      "Je kan wel maximaal dubbeldrieman worden, er is niet zoiets als trippeldrieman bijvoorbeeld."
+"""
+
+
+@bot.command(name='dubbeldrieman', pass_context=True, hidden=True)
 async def double_3man(ctx):
     if not (bot.spel is not None and isinstance(bot.spel, Game)):
         raise commands.errors.CommandNotFound()
@@ -297,6 +301,11 @@ async def double_3man(ctx):
 
 @bot.event
 async def on_message(message):
+    server = discord.utils.get(bot.guilds, name=SERVER)
+    channel = discord.utils.get(server.channels, name=CHANNEL)
+    if message.content == "3man help dubbeldrieman":
+        await channel.send("De DriemanBot heeft geen commando 'dubbeldrieman'.")
+        return
     await bot.process_commands(message)
     if message.author == bot.user or message.content != "vice kapot" or bot.spel is None:
         return
@@ -308,8 +317,6 @@ async def on_message(message):
         access = [line.strip() for line in file]
     if str(message.author) not in access:
         return
-    server = discord.utils.get(bot.guilds, name=SERVER)
-    channel = discord.utils.get(server.channels, name=CHANNEL)
     response = "@Kobe#5350\n" \
                f"Iemand (kuch kuck {message.author.mention}) vindt dat je nog niet zat genoeg bent.\n" \
                f"Wie ben ik, simpele bot die ik ben, om dit tegen te spreken?\n" \

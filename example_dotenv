@@ -1,5 +1,7 @@
-DISCORD_TOKEN=Nzg0NTAxNjAzNjQ1NjUzMDE4.X8qODQ.ZnHVnFEstq1qeF-vgW9U89Z1evk # not the actual token, just an example
-TESTER=on
+DISCORD_TOKEN=Nzg0NTAxNjAzNjQ1NjUzMDE4.X8qODQ.ZnHVnFEstq1qeF-vgW9U89Z1evk
+# above is not the actual token, just an example
+TESTER=off
+# switch TESTER to 'on' for (easier) testing
 TEST_SERVER=DriemanBot testserver
 WINA_SERVER=WiNA
 TEST_CHANNEL=driemantestchannel
