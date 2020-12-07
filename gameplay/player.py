@@ -11,6 +11,7 @@ class Player():
         self.achterstand = 0
         self.totaal = 0
         self.uitdelen = 0
+        self.dbldrieman = 1
 
     def set_previous_player(self, player):
         assert type(player) == Player, f"Dit is geen speler, maar een {type(player)}."
@@ -50,4 +51,8 @@ class Player():
     def set_nickname(self, nickname):
         if nickname is not None:
             self.nickname = nickname
+        return self
+
+    def switch_dbldrieman(self):
+        self.dbldrieman = {1: 2, 2: 1}[self.dbldrieman]
         return self

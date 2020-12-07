@@ -24,6 +24,7 @@ PREFIX = os.getenv('PREFIX')
 MEEDOEN, REGELS, ROL, SPELERS, START, TEMPUS, STOP, WEGGAAN, UITDELEN, BIJNAAM = os.getenv('MEEDOEN'), os.getenv(
     'REGELS'), os.getenv('ROL'), os.getenv('SPELERS'), os.getenv('START'), os.getenv('TEMPUS'), os.getenv(
     'STOP'), os.getenv('WEGGAAN'), os.getenv('UITDELEN'), os.getenv('BIJNAAM')
+DUBBELDRIEMAN = os.getenv('DUBBELDRIEMAN')
 
 
 class CustomHelpCommand(commands.DefaultHelpCommand):
@@ -259,6 +260,30 @@ async def distribute(ctx, *, uitgedeeld):
     await ctx.channel.send(response)
 
 
+@bot.command(name='dubbeldrieman', hidden=True, help="Als dit commando geactiveerd wordt met "
+                                                     f"'{PREFIX}{DUBBELDRIEMAN} in', en een speler wordt tweemaal na "
+                                                     f"elkaar drieman, dan drinkt de drieman vanaf dan 2"
+                                                     "drankeenheden per 3 op de dobbelstenen. Met "
+                                                     f"'{PREFIX}{DUBBELDRIEMAN} ex' kan dit gedeactiveerd worden.")
+@commands.check(game_busy)
+@commands.check(player_exists)
+async def double_3man(ctx, status):
+    if status not in ["in", "ex"]:
+        raise commands.CheckFailure(message="wrong dubbeldrieman status")
+    if (status, bot.spel.dbldriemansetting) in [("ex", True), ("in", False)]:
+        bot.spel.switch_dbldrieman_setting()
+        if bot.spel.dbldriemansetting:
+            response = "Er wordt gespeeld met de instelling 'dubbeldrieman'. " \
+                       "Dit wil zeggen dat als je twee maal na elkaar drieman wordt, " \
+                       "je ook tweemaal zoveel moet drinken. " \
+                       "Elke drie die op de dobbelstenen tevoorschijn komt, betekent dan twee slokken voor de drieman."
+        else:
+            response = f"De instelling 'dubbeldrieman' staat nu terug uit."
+    else:
+        response = f"Je bent al in de modus '{DUBBELDRIEMAN} {status}'."
+    await ctx.channel.send(response)
+
+
 @bot.event
 async def on_error(error, *args, **kwargs):
     with open('err.txt', 'a') as f:
@@ -315,6 +340,9 @@ async def on_command_error(ctx, error):
         elif str(error) == "wrong tempus status":
             await channel.send(f"Je kan enkel '{PREFIX}{TEMPUS} in' of '{PREFIX}{TEMPUS} ex' gebruiken."
                                f"'{ctx.message.content}' is geen geldig tempus commando.")
+        elif str(error) == "wrong dubbeldrieman status":
+            await channel.send(f"Je kan enkel '{PREFIX}{DUBBELDRIEMAN} in' of '{PREFIX}{DUBBELDRIEMAN} ex' gebruiken."
+                               f"'{ctx.message.content}' is geen geldig dubbeldrieman commando.")
         elif str(error) == "not your turn":
             await channel.send("Je bent nu niet aan de beurt, wacht alsjeblieft geduldig je beurt af.\n"
                                f"Het is nu de beurt aan {bot.spel.beurt.name}")

@@ -18,7 +18,7 @@ class Game():
         self.players = []
         self.started = False
         self.beurt = None
-        self.dubbeldrieman = 1
+        self.dbldriemansetting = False  # TODO: use dbldrieman in hidden bot command
 
     def add_player(self, player):
         assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
@@ -93,8 +93,12 @@ class Game():
         response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
         if 3 in dice:
             if self.drieman is not None:
-                self.drieman.add_to_drink(dice.count(3))  # TODO: dubbeldrieman?
+                self.drieman.add_to_drink(dice.count(3) * (self.drieman.dbldrieman if self.dbldriemansetting else 1))
         if sum(dice) == 3:
+            if self.drieman.dbldrieman == 2:
+                self.drieman.switch_dbldrieman()
+            if self.drieman == player:
+                player.switch_dbldrieman()
             self.drieman = player
             response += f"{player.name} is nu drieman.\n"
         elif sum(dice) == 6:
@@ -146,6 +150,6 @@ class Game():
         player.distribute(other_player, units)
         return self
 
-    def switch_dubbeldrieman(self):
-        self.dubbeldrieman = {1: 2, 2: 1}[self.dubbeldrieman]
+    def switch_dbldrieman_setting(self):
+        self.dbldriemansetting = not self.dbldriemansetting
         return self
