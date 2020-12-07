@@ -122,16 +122,11 @@ async def join(ctx, bijnaam=None):
     if bijnaam is not None:
         if not (isinstance(bijnaam, str) and " " not in bijnaam):
             raise commands.CheckFailure(message="wrong nickname input")
-    elif ctx.author.display_name != ctx.author.name:
-        bijnaam = ctx.author.display_name
-    player = Player(ctx.author.name, nickname=bijnaam)
+    player = Player(ctx.author).set_nickname(bijnaam)  # TODO: vice kapot?
     if player.name in [player.name for player in bot.spel.players]:
         raise commands.CheckFailure(message="player already exists")
     bot.spel.add_player(player)
-    response += f"Speler {player.name}"
-    if player.nickname is not None:
-        response += f", ook gekend als {player.nickname},"
-    response += " is in het spel gekomen."
+    response += f"{player.name} ({player.nickname}) is in het spel gekomen."
     await ctx.channel.send(response)
 
 
@@ -144,7 +139,7 @@ async def nickname(ctx, *, bijnaam: str):
         raise commands.CheckFailure(message="wrong nickname input")
     player = bot.spel.players[[player.name for player in bot.spel.players].index(ctx.author.name)]
     player.set_nickname(bijnaam)
-    await ctx.channel.send(f"Speler {player.name} heeft nu de bijnaam {player.nickname}.")
+    await ctx.channel.send(f"{player.name} heeft nu de bijnaam {player.nickname}.")
 
 
 @bot.command(name=WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers.')
@@ -169,6 +164,7 @@ async def leave(ctx):
 @bot.command(name=STOP, help=f'Stop het spel als er minder dan {MIN_PLAYERS} actieve spelers zijn.')
 @commands.check(game_busy)
 async def stop(ctx):
+    # TODO: alle spelers eerst verwijderen -> weggaan bericht voor iedereen
     if len(bot.spel.players) < MIN_PLAYERS:
         response = "Het spel is nu afgelopen.\n" \
                    f"Een nieuw spel kan begonnen worden als er opnieuw {MIN_PLAYERS} spelers zijn."
@@ -204,9 +200,9 @@ async def who_is_here(ctx):
                         inline=True)
     response = ""
     if bot.spel.started:
-        response += f"Speler {bot.spel.beurt.name} is aan de beurt."
+        response += f"{bot.spel.beurt.name} is aan de beurt."
     if bot.spel.drieman:
-        response += f" Speler {bot.spel.drieman.name} is op dit moment drieman."
+        response += f" {bot.spel.drieman.name} is op dit moment drieman."
     await ctx.channel.send(response, embed=embed)
 
 
@@ -358,3 +354,7 @@ async def on_command_error(ctx, error):
 
 
 bot.run(TOKEN)  # TODO: test de DriemanBot met een aantal echte spelers
+
+# TODO: verander player.name van ctx.author.name naar str(ctx.author),
+#  dit laatste bevat het unieke id nummer van een account,
+#  hierbij wel zorgen dat bij 3man spelers en in strings wel de gewone naam staat

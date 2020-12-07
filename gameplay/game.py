@@ -85,7 +85,7 @@ class Game():
         response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
         if 3 in dice:
             if self.drieman is not None:
-                self.drieman.add_to_drink(dice.count(3))
+                self.drieman.add_to_drink(dice.count(3))  # TODO: dubbeldrieman?
         if sum(dice) == 3:
             self.drieman = player
             response += f"Speler {player.name} is nu drieman.\n"
