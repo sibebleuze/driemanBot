@@ -287,9 +287,9 @@ async def double_3man(ctx, status):
 @bot.event
 async def on_message(message):
     await bot.process_commands(message)
-    if message.author == bot.user or message.content != "vice kapot":
+    if message.author == bot.user or message.content != "vice kapot" or bot.spel is None:
         return
-    if str(message.author) not in [player.fullname for player in bot.spel.players]:
+    if not isinstance(bot.spel, Game) or str(message.author) not in [player.fullname for player in bot.spel.players]:
         return
     with open('.secret', 'r') as file:
         access = [line.strip() for line in file]
