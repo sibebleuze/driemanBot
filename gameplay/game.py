@@ -43,10 +43,10 @@ class Game():
         self.players.remove(player)
         response = ""
         if player.achterstand != 0:
-            response += f"Speler {player.name}, je hoort nog {player.achterstand} drankeenheden te drinken.\n"
+            response += f"{player.name}, je hoort nog {player.achterstand} drankeenheden te drinken.\n"
             player.drinking()
-        response += f"Speler {player.name} heeft in totaal {player.totaal} drankeenheden gedronken.\n" \
-                    f"Speler {player.name} heeft het spel verlaten. Slaap zacht kameraad."
+        response += f"{player.name} heeft in totaal {player.totaal} drankeenheden gedronken.\n" \
+                    f"{player.name} heeft het spel verlaten. Slaap zacht kameraad."
         return response
 
     def start_game(self):
@@ -93,7 +93,7 @@ class Game():
                 self.drieman.add_to_drink(dice.count(3))  # TODO: dubbeldrieman?
         if sum(dice) == 3:
             self.drieman = player
-            response += f"Speler {player.name} is nu drieman.\n"
+            response += f"{player.name} is nu drieman.\n"
         elif sum(dice) == 6:
             player.previous_player.add_to_drink(1)
         elif sum(dice) == 7:
@@ -113,13 +113,13 @@ class Game():
             assert player.achterstand >= 0, "Het spel is kapot, iemand heeft een negatief aantal te drinken eenheden."
             if player.achterstand > 0:
                 if player.tempus:
-                    response += f"Speler {player.name} is een tempus aan het nemen en " \
+                    response += f"{player.name} is een tempus aan het nemen en " \
                                 f"staat momenteel {player.achterstand} drankeenheden achter.\n"
                 else:
-                    response += f"Speler {player.name} moet {player.achterstand} drankeenheden drinken.\n"
+                    response += f"{player.name} moet {player.achterstand} drankeenheden drinken.\n"
                     player.drinking()
             if player.uitdelen > 0:
-                response += f"Speler {player.name} mag (in totaal) nog {player.uitdelen} drankeenheden uitdelen.\n"
+                response += f"{player.name} mag (in totaal) nog {player.uitdelen} drankeenheden uitdelen.\n"
         response += "Dat is alles, drinken maar!"
         return response
 
