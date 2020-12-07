@@ -2,7 +2,7 @@
 
 class Player():
     def __init__(self, discorduser):
-        self.fullname = str(discorduser)  # TODO: verder uitwerken fullname
+        self.fullname = str(discorduser)
         self.name = discorduser.mention
         self.nickname = discorduser.display_name
         self.previous_player = self
@@ -22,7 +22,7 @@ class Player():
         self.next_player = player
         return self
 
-    def switch_tempus(self, test=""):
+    def switch_tempus(self):
         self.tempus = not self.tempus
         return self
 

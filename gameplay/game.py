@@ -21,7 +21,7 @@ class Game():
 
     def add_player(self, player):
         assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
-        assert player.name not in [player.name for player in self.players], "Deze speler zit al in het spel."
+        assert player.fullname not in [player.fullname for player in self.players], "Deze speler zit al in het spel."
         if self.players:
             player.set_previous_player(self.players[-1])
             self.players[-1].set_next_player(player)
@@ -31,7 +31,7 @@ class Game():
 
     def remove_player(self, player):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
-        names = [player.name for player in self.players]
+        names = [player.fullname for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
         if player == self.drieman:
@@ -63,7 +63,7 @@ class Game():
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
         assert isinstance(status, str) and status in ["in", "ex"], \
             f"Misbruik van {TEMPUS} commando, verkeerde status {status}."  # normaal gezien gecheckt voor de functiecall
-        names = [player.name for player in self.players]
+        names = [player.fullname for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
         if (status, player.tempus) in [("ex", True), ("in", False)]:
@@ -79,7 +79,7 @@ class Game():
 
     def roll(self, player):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
-        names = [player.name for player in self.players]
+        names = [player.fullname for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
         assert player == self.beurt, \
@@ -125,7 +125,7 @@ class Game():
 
     def check_player_distributor(self, player, units, zero_allowed):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
-        names = [player.name for player in self.players]
+        names = [player.fullname for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
         return player.uitdelen <= units and (player.uitdelen > 0 or zero_allowed)
@@ -134,11 +134,10 @@ class Game():
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
         assert isinstance(other_player, int), f"Dit is geen nummer van een speler, maar een {type(other_player)}."
         assert isinstance(units, int), f"Dit is geen aantal drankeenheden, maar een {type(units)}."
-        names = [player.name for player in self.players]
+        names = [player.fullname for player in self.players]
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         assert other_player in range(
             len(self.players)), "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
         other_player = self.players[other_player]
         player.distribute(other_player, units)
-        return True

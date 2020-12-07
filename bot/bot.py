@@ -77,7 +77,7 @@ async def game_started(ctx):
 
 @commands.check(game_busy)
 async def player_exists(ctx):
-    if ctx.author.name not in [player.name for player in bot.spel.players]:
+    if str(ctx.author) not in [player.fullname for player in bot.spel.players]:
         raise commands.CheckFailure(message="player doesn't exist")
     return True
 
@@ -85,7 +85,7 @@ async def player_exists(ctx):
 @commands.check(game_busy)
 @commands.check(game_started)
 async def not_your_turn(ctx):
-    if ctx.author.name != bot.spel.beurt.name:
+    if str(ctx.author) != bot.spel.beurt.fullname:
         raise commands.CheckFailure(message="not your turn")
     return True
 
@@ -120,10 +120,10 @@ async def join(ctx, bijnaam=None):
         bot.spel = Game()
         response += "Er is een nieuw spel begonnen.\n"
     if bijnaam is not None:
-        if not (isinstance(bijnaam, str) and " " not in bijnaam):
+        if not (isinstance(bijnaam, str) and " " not in bijnaam and bijnaam != ""):
             raise commands.CheckFailure(message="wrong nickname input")
     player = Player(ctx.author).set_nickname(bijnaam)  # TODO: vice kapot?
-    if player.name in [player.name for player in bot.spel.players]:
+    if player.fullname in [player.fullname for player in bot.spel.players]:
         raise commands.CheckFailure(message="player already exists")
     bot.spel.add_player(player)
     response += f"{player.name} ({player.nickname}) is in het spel gekomen."
@@ -135,9 +135,9 @@ async def join(ctx, bijnaam=None):
 @commands.check(game_busy)
 @commands.check(player_exists)
 async def nickname(ctx, *, bijnaam: str):
-    if " " in bijnaam:
+    if " " in bijnaam or bijnaam == "":
         raise commands.CheckFailure(message="wrong nickname input")
-    player = bot.spel.players[[player.name for player in bot.spel.players].index(ctx.author.name)]
+    player = bot.spel.players[[player.fullname for player in bot.spel.players].index(str(ctx.author))]
     player.set_nickname(bijnaam)
     await ctx.channel.send(f"{player.name} heeft nu de bijnaam {player.nickname}.")
 
@@ -146,7 +146,7 @@ async def nickname(ctx, *, bijnaam: str):
 @commands.check(game_busy)
 @commands.check(player_exists)
 async def leave(ctx):
-    response = bot.spel.remove_player(ctx.author.name)
+    response = bot.spel.remove_player(str(ctx.author))
     if not bot.spel.players:
         response += "\nDe laatste speler heeft het spel verlaten. Het spel is nu afgelopen.\n" \
                     f"Een nieuw spel kan begonnen worden als er opnieuw {MIN_PLAYERS} spelers zijn."
@@ -164,10 +164,12 @@ async def leave(ctx):
 @bot.command(name=STOP, help=f'Stop het spel als er minder dan {MIN_PLAYERS} actieve spelers zijn.')
 @commands.check(game_busy)
 async def stop(ctx):
-    # TODO: alle spelers eerst verwijderen -> weggaan bericht voor iedereen
+    response = ""
     if len(bot.spel.players) < MIN_PLAYERS:
-        response = "Het spel is nu afgelopen.\n" \
-                   f"Een nieuw spel kan begonnen worden als er opnieuw {MIN_PLAYERS} spelers zijn."
+        for player in bot.spel.players:
+            response += bot.spel.remove_player(player.fullname)
+        response += "\nHet spel is nu afgelopen.\n" \
+                    f"Een nieuw spel kan begonnen worden als er opnieuw {MIN_PLAYERS} spelers zijn."
         bot.spel = None
         gc.collect()
     else:
@@ -201,7 +203,7 @@ async def who_is_here(ctx):
     response = ""
     if bot.spel.started:
         response += f"{bot.spel.beurt.name} is aan de beurt."
-    if bot.spel.drieman:
+    if bot.spel.drieman is not None:
         response += f" {bot.spel.drieman.name} is op dit moment drieman."
     await ctx.channel.send(response, embed=embed)
 
@@ -211,7 +213,7 @@ async def who_is_here(ctx):
 @commands.check(game_started)
 @commands.check(not_your_turn)
 async def roll(ctx):
-    response = bot.spel.roll(ctx.author.name)
+    response = bot.spel.roll(str(ctx.author))
     await ctx.channel.send(response)
 
 
@@ -224,7 +226,7 @@ async def roll(ctx):
 async def tempus(ctx, status: str):
     if status not in ["in", "ex"]:
         raise commands.CheckFailure(message="wrong tempus status")
-    response = bot.spel.player_tempus(ctx.author.name, status)
+    response = bot.spel.player_tempus(str(ctx.author), status)
     await ctx.channel.send(response)
 
 
@@ -245,11 +247,11 @@ async def distribute(ctx, *, uitgedeeld):
     if not all([[units > 0 for _, units in to_distribute]]):
         raise commands.CheckFailure(message="wrong distribute call")
     all_units = sum([units for _, units in to_distribute])
-    if not bot.spel.check_player_distributor(ctx.author.name, all_units, zero_allowed=False):
+    if not bot.spel.check_player_distributor(str(ctx.author), all_units, zero_allowed=False):
         raise commands.CheckFailure(message="not enough drink units left")
     if all([player in range(len(bot.spel.players)) for player in [p for p, _ in to_distribute]]):
         for player, units in to_distribute:
-            bot.spel.distributor(ctx.author.name, player, units)
+            bot.spel.distributor(str(ctx.author), player, units)
         response = bot.spel.drink()
     else:
         response = "Een van de spelers die je probeert drank te geven bestaat niet. " \
@@ -354,7 +356,3 @@ async def on_command_error(ctx, error):
 
 
 bot.run(TOKEN)  # TODO: test de DriemanBot met een aantal echte spelers
-
-# TODO: verander player.name van ctx.author.name naar str(ctx.author),
-#  dit laatste bevat het unieke id nummer van een account,
-#  hierbij wel zorgen dat bij 3man spelers en in strings wel de gewone naam staat
