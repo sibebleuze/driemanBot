@@ -18,6 +18,7 @@ class Game():
         self.players = []
         self.started = False
         self.beurt = None
+        self.dubbeldrieman = 1
 
     def add_player(self, player):
         assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
@@ -28,6 +29,7 @@ class Game():
             player.set_next_player(self.players[0])
             self.players[0].set_previous_player(player)
         self.players.append(player)
+        return self
 
     def remove_player(self, player):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
@@ -53,11 +55,12 @@ class Game():
         if len(self.players) >= MIN_PLAYERS:
             self.started = True
             self.beurt = self.players[0]
-            return "Het spel is gestart."
+            response = "Het spel is gestart."
         else:
-            return "Nog niet genoeg spelers, " \
-                   f"je moet minstens met {MIN_PLAYERS} zijn om te kunnen driemannen (zie art. 1).\n" \
-                   f"Wacht tot er nog {MIN_PLAYERS - len(self.players)} speler(s) meer meedoet/meedoen."
+            response = "Nog niet genoeg spelers, " \
+                       f"je moet minstens met {MIN_PLAYERS} zijn om te kunnen driemannen (zie art. 1).\n" \
+                       f"Wacht tot er nog {MIN_PLAYERS - len(self.players)} speler(s) meer meedoet/meedoen."
+        return response
 
     def player_tempus(self, player, status):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
@@ -141,3 +144,8 @@ class Game():
         player = self.players[names.index(player)]
         other_player = self.players[other_player]
         player.distribute(other_player, units)
+        return self
+
+    def switch_dubbeldrieman(self):
+        self.dubbeldrieman = {1: 2, 2: 1}[self.dubbeldrieman]
+        return self
