@@ -67,7 +67,12 @@ class Game():
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]
         if (status, player.tempus) in [("ex", True), ("in", False)]:
-            response = player.switch_tempus()
+            player.switch_tempus()
+            if player.tempus:
+                response = f"{player.name} heeft nu tempus, tot zo!"
+            else:
+                response = f"Welkom terug {player.name}, je moet nu {player.achterstand} drankeenheden drinken."
+                player.drinking()
         else:
             response = f"Je bent al in de modus '{TEMPUS} {status}'."
         return response

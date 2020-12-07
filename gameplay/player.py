@@ -22,18 +22,9 @@ class Player():
         self.next_player = player
         return self
 
-    def switch_tempus(self):
-        """
-        This is the only method in Player that doesn't return itself, i.e. a Player object.
-        Be careful with this!
-        """
+    def switch_tempus(self, test=""):
         self.tempus = not self.tempus
-        if self.tempus:
-            response = f"{self.name} heeft nu tempus, tot zo!"
-        else:
-            response = f"Welkom terug {self.name}, je moet nu {self.achterstand} drankeenheden drinken."
-            self.drinking()
-        return response
+        return self
 
     def add_to_drink(self, units):
         self.achterstand += units
