@@ -5,12 +5,10 @@ import random  # noqa
 import discord  # noqa
 from dotenv import load_dotenv  # noqa
 
+from .constants import *  # noqa
 from .player import Player  # noqa
 
-load_dotenv()
-MIN_PLAYERS = int(os.getenv('MIN_TESTERS')) if os.getenv('TESTER') == 'on' else int(os.getenv('MIN_PLAYERS'))
-PREFIX = os.getenv('PREFIX')
-TEMPUS = os.getenv('TEMPUS')
+MIN_PLAYERS = MIN_TESTERS if TESTER else MIN_PLAYERS
 
 
 class Game():

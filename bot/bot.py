@@ -9,7 +9,7 @@ import discord  # noqa
 from discord.ext import commands  # noqa
 from dotenv import load_dotenv  # noqa
 
-from gameplay.constants import *
+from gameplay.constants import *  # noqa
 from gameplay.game import Game  # noqa
 from gameplay.player import Player  # noqa
 

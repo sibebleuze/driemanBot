@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
 class Player():
+    "All Player methods return self to allow chaining commands if that is ever required."
+
     def __init__(self, discorduser):
         self.fullname = str(discorduser)
         self.name = discorduser.mention
