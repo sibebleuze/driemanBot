@@ -398,7 +398,6 @@ async def on_command_error(ctx, error):
                 f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention} "
                 f"onder '{ctx.channel.category.name}'. Dat gaat helaas niet.")
         else:
-            # write_error()
             await channel.send(f"{ctx.author.mention}\n"
                                f"Het commando '{ctx.message.content}' is onbekend. "
                                "Contacteer de beheerder van de DriemanBot als je denkt dat dit zou moeten werken.")
