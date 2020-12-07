@@ -2,6 +2,7 @@
 import os  # noqa
 import random  # noqa
 
+import discord  # noqa
 from dotenv import load_dotenv  # noqa
 
 from .player import Player  # noqa
@@ -91,16 +92,22 @@ class Game():
             return f"Je bent nog in modus '{TEMPUS} in'. Gebruik '{PREFIX}{TEMPUS} ex' om verder te spelen."
         dice = [random.randint(1, 6) for _ in range(2)]
         response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
+        url = None
         if 3 in dice:
             if self.drieman is not None:
                 self.drieman.add_to_drink(dice.count(3) * (self.drieman.dbldrieman if self.dbldriemansetting else 1))
         if sum(dice) == 3:
-            if self.drieman.dbldrieman == 2:
+            if self.drieman and self.drieman.dbldrieman == 2:
                 self.drieman.switch_dbldrieman()
-            if self.drieman == player:
+            if self.drieman and self.drieman == player:
                 player.switch_dbldrieman()
+            if self.dbldriemansetting and player.dbldrieman == 2:
+                url = "dubbeldrieman.jpg"
+                response += f"{player.name} is nu dubbeldrieman.\n"
+            else:
+                url = "drieman.png"
+                response += f"{player.name} is nu drieman.\n"
             self.drieman = player
-            response += f"{player.name} is nu drieman.\n"
         elif sum(dice) == 6:
             player.previous_player.add_to_drink(1)
         elif sum(dice) == 7:
@@ -112,7 +119,7 @@ class Game():
         if not (sum(dice) in range(6, 8 + 1) or dice[0] == dice[1]):
             self.beurt = self.beurt.next_player
         response += self.drink()
-        return response
+        return response, url
 
     def drink(self):
         response = ""

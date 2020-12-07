@@ -174,10 +174,10 @@ async def stop(ctx):
         bot.spel = None
         gc.collect()
     else:
-        response = f"Er zijn nog meer dan {MIN_PLAYERS - 1} spelers in het spel." \
-                   "Om te zorgen dat niet zomaar iedereen een actief spel kan afbreken,\n" \
+        response = f"Er zijn nog meer dan {MIN_PLAYERS - 1} spelers in het spel. " \
+                   "Om te zorgen dat niet zomaar iedereen een actief spel kan afbreken," \
                    f"kan het commando '{PREFIX}{STOP}' pas gebruikt worden " \
-                   f"als er minder dan {MIN_PLAYERS} overblijven.\n" \
+                   f"als er minder dan {MIN_PLAYERS} overblijven. " \
                    "Als je echt wil stoppen, " \
                    f"zal/zullen nog {len(bot.spel.players) - (MIN_PLAYERS - 1)} speler(s) het spel moeten verlaten."
     await ctx.channel.send(response)
@@ -214,8 +214,14 @@ async def who_is_here(ctx):
 @commands.check(game_started)
 @commands.check(not_your_turn)
 async def roll(ctx):
-    response = bot.spel.roll(str(ctx.author))
-    await ctx.channel.send(response)
+    response, url = bot.spel.roll(str(ctx.author))
+    if url is not None:
+        file = discord.File(url)
+        embed = discord.Embed()
+        embed.set_image(url="attachment://" + url)
+        await ctx.channel.send(response, file=file, embed=embed)
+    else:
+        await ctx.channel.send(response)
 
 
 @bot.command(name=TEMPUS, help="DriemanBot houdt tijdelijk bij hoeveel je moet drinken "
@@ -260,14 +266,17 @@ async def distribute(ctx, *, uitgedeeld):
     await ctx.channel.send(response)
 
 
-@bot.command(name='dubbeldrieman', hidden=True, help="Als dit commando geactiveerd wordt met "
-                                                     f"'{PREFIX}{DUBBELDRIEMAN} in', en een speler wordt tweemaal na "
-                                                     f"elkaar drieman, dan drinkt de drieman vanaf dan 2"
-                                                     "drankeenheden per 3 op de dobbelstenen. Met "
-                                                     f"'{PREFIX}{DUBBELDRIEMAN} ex' kan dit gedeactiveerd worden.")
+@bot.command(name='dubbeldrieman', pass_context=True, hidden=True, help="Als dit commando geactiveerd wordt met "
+                                                                        f"'{PREFIX}{DUBBELDRIEMAN} in', en een speler werpt een 2 en "
+                                                                        "een 1 als deze al drieman is, dan drinkt de speler vanaf dan 2"
+                                                                        "drankeenheden per 3 op de dobbelstenen. Met "
+                                                                        f"'{PREFIX}{DUBBELDRIEMAN} ex' kan dit gedeactiveerd worden.\n"
+                                                                        "Je kan wel maximaal dubbeldrieman worden, "
+                                                                        "er is niet zoiets als trippeldrieman bijvoorbeeld.")
 @commands.check(game_busy)
 @commands.check(player_exists)
 async def double_3man(ctx, status):
+    await ctx.message.delete()
     if status not in ["in", "ex"]:
         raise commands.CheckFailure(message="wrong dubbeldrieman status")
     if (status, bot.spel.dbldriemansetting) in [("ex", True), ("in", False)]:
@@ -291,6 +300,8 @@ async def on_message(message):
         return
     if not isinstance(bot.spel, Game) or str(message.author) not in [player.fullname for player in bot.spel.players]:
         return
+    if message.content == "vice kapot":
+        await message.delete()
     with open('.secret', 'r') as file:
         access = [line.strip() for line in file]
     if str(message.author) not in access:
@@ -406,4 +417,4 @@ async def on_command_error(ctx, error):
             f"Het commando '{ctx.message.content}' is gefaald. Contacteer de beheerder van de DriemanBot.")
 
 
-bot.run(TOKEN)
+bot.run(TOKEN)  # TODO: add comments everywhere to explain what the code does
