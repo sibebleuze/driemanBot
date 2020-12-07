@@ -122,6 +122,8 @@ async def join(ctx, bijnaam=None):
     if bijnaam is not None:
         if not (isinstance(bijnaam, str) and " " not in bijnaam):
             raise commands.CheckFailure(message="wrong nickname input")
+    elif ctx.author.display_name != ctx.author.name:
+        bijnaam = ctx.author.display_name
     player = Player(ctx.author.name, nickname=bijnaam)
     if player.name in [player.name for player in bot.spel.players]:
         raise commands.CheckFailure(message="player already exists")
