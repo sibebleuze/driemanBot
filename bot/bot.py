@@ -266,11 +266,8 @@ async def on_error(error, *args, **kwargs):
         try:
             traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
         except Exception as exc:
-            if TESTER:
-                raise exc
-            else:
-                f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
-                traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
+            f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
+            traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
         f.write("\n\n\n\n\n")
     server = discord.utils.get(bot.guilds, name=SERVER)
     channel = discord.utils.get(server.channels, name=CHANNEL)
@@ -288,11 +285,8 @@ async def on_command_error(ctx, error):
             try:
                 traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
             except Exception as exc:
-                if TESTER:
-                    raise exc
-                else:
-                    f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
-                    traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
+                f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
+                traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
             f.write("\n\n\n\n\n")
 
     server = discord.utils.get(bot.guilds, name=SERVER)
