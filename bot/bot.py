@@ -272,12 +272,15 @@ async def distribute(ctx, *, uitgedeeld):
                   "dan drinkt de speler vanaf dan 2 drankeenheden per 3 op de dobbelstenen. "
                   f"Met '{PREFIX}{DUBBELDRIEMAN} ex' kan dit gedeactiveerd worden.\n"
                   "Je kan wel maximaal dubbeldrieman worden, er is niet zoiets als trippeldrieman bijvoorbeeld.")
-@commands.check(game_busy)
-@commands.check(player_exists)
-async def double_3man(ctx, status):
-    await ctx.message.delete()
+async def double_3man(ctx):
+    if not (bot.spel is not None and isinstance(bot.spel, Game)):
+        raise commands.errors.CommandNotFound()
+    if str(ctx.author) not in [player.fullname for player in bot.spel.players]:
+        raise commands.errors.CommandNotFound()
+    status = ctx.message.content[-2:]
     if status not in ["in", "ex"]:
-        raise commands.CheckFailure(message="wrong dubbeldrieman status")
+        raise commands.errors.CommandNotFound()
+    await ctx.message.delete()
     if (status, bot.spel.dbldriemansetting) in [("ex", True), ("in", False)]:
         bot.spel.switch_dbldrieman_setting()
         if bot.spel.dbldriemansetting:
@@ -373,9 +376,6 @@ async def on_command_error(ctx, error):
         elif str(error) == "wrong tempus status":
             await channel.send(f"Je kan enkel '{PREFIX}{TEMPUS} in' of '{PREFIX}{TEMPUS} ex' gebruiken."
                                f"'{ctx.message.content}' is geen geldig tempus commando.")
-        elif str(error) == "wrong dubbeldrieman status":
-            await channel.send(f"Je kan enkel '{PREFIX}{DUBBELDRIEMAN} in' of '{PREFIX}{DUBBELDRIEMAN} ex' gebruiken."
-                               f"'{ctx.message.content}' is geen geldig dubbeldrieman commando.")
         elif str(error) == "not your turn":
             await channel.send("Je bent nu niet aan de beurt, wacht alsjeblieft geduldig je beurt af.\n"
                                f"Het is nu de beurt aan {bot.spel.beurt.name}")
@@ -398,7 +398,7 @@ async def on_command_error(ctx, error):
                 f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention} "
                 f"onder '{ctx.channel.category.name}'. Dat gaat helaas niet.")
         else:
-            write_error()
+            # write_error()
             await channel.send(f"{ctx.author.mention}\n"
                                f"Het commando '{ctx.message.content}' is onbekend. "
                                "Contacteer de beheerder van de DriemanBot als je denkt dat dit zou moeten werken.")
