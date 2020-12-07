@@ -123,7 +123,7 @@ async def join(ctx, bijnaam=None):
     if bijnaam is not None:
         if not (isinstance(bijnaam, str) and " " not in bijnaam and bijnaam != ""):
             raise commands.CheckFailure(message="wrong nickname input")
-    player = Player(ctx.author).set_nickname(bijnaam)  # TODO: vice kapot?
+    player = Player(ctx.author).set_nickname(bijnaam)
     if player.fullname in [player.fullname for player in bot.spel.players]:
         raise commands.CheckFailure(message="player already exists")
     bot.spel.add_player(player)
@@ -285,6 +285,29 @@ async def double_3man(ctx, status):
 
 
 @bot.event
+async def on_message(message):
+    await bot.process_commands(message)
+    if message.author == bot.user or message.content != "vice kapot":
+        return
+    if str(message.author) not in [player.fullname for player in bot.spel.players]:
+        return
+    with open('.secret', 'r') as file:
+        access = [line.strip() for line in file]
+    if str(message.author) not in access:
+        return
+    server = discord.utils.get(bot.guilds, name=SERVER)
+    channel = discord.utils.get(server.channels, name=CHANNEL)
+    response = "@Kobe#5350\n" \
+               f"Iemand (kuch kuck {message.author.mention}) vindt dat je nog niet zat genoeg bent.\n" \
+               f"Wie ben ik, simpele bot die ik ben, om dit tegen te spreken?\n" \
+               f"Daarom speciaal voor jou:"
+    file = discord.File("vicekapot.png")
+    embed = discord.Embed()
+    embed.set_image(url="attachment://vicekapot.png")
+    await channel.send(response, file=file, embed=embed)
+
+
+@bot.event
 async def on_error(error, *args, **kwargs):
     with open('err.txt', 'a') as f:
         f.write(f"{str(datetime.now())}\n{str(error)}\n")
@@ -383,4 +406,4 @@ async def on_command_error(ctx, error):
             f"Het commando '{ctx.message.content}' is gefaald. Contacteer de beheerder van de DriemanBot.")
 
 
-bot.run(TOKEN)  # TODO: test de DriemanBot met een aantal echte spelers
+bot.run(TOKEN)

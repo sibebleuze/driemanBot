@@ -18,7 +18,7 @@ class Game():
         self.players = []
         self.started = False
         self.beurt = None
-        self.dbldriemansetting = False  # TODO: use dbldrieman in hidden bot command
+        self.dbldriemansetting = False
 
     def add_player(self, player):
         assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
