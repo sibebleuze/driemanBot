@@ -266,13 +266,12 @@ async def distribute(ctx, *, uitgedeeld):
     await ctx.channel.send(response)
 
 
-@bot.command(name='dubbeldrieman', pass_context=True, hidden=True, help="Als dit commando geactiveerd wordt met "
-                                                                        f"'{PREFIX}{DUBBELDRIEMAN} in', en een speler werpt een 2 en "
-                                                                        "een 1 als deze al drieman is, dan drinkt de speler vanaf dan 2"
-                                                                        "drankeenheden per 3 op de dobbelstenen. Met "
-                                                                        f"'{PREFIX}{DUBBELDRIEMAN} ex' kan dit gedeactiveerd worden.\n"
-                                                                        "Je kan wel maximaal dubbeldrieman worden, "
-                                                                        "er is niet zoiets als trippeldrieman bijvoorbeeld.")
+@bot.command(name='dubbeldrieman', pass_context=True, hidden=True,
+             help=f"Als dit commando geactiveerd wordt met '{PREFIX}{DUBBELDRIEMAN} in', "
+                  "en een speler werpt een 2 en een 1 als deze al drieman is, "
+                  "dan drinkt de speler vanaf dan 2 drankeenheden per 3 op de dobbelstenen. "
+                  f"Met '{PREFIX}{DUBBELDRIEMAN} ex' kan dit gedeactiveerd worden.\n"
+                  "Je kan wel maximaal dubbeldrieman worden, er is niet zoiets als trippeldrieman bijvoorbeeld.")
 @commands.check(game_busy)
 @commands.check(player_exists)
 async def double_3man(ctx, status):
