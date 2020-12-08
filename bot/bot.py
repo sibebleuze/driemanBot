@@ -290,14 +290,14 @@ async def on_message(message):
     await bot.process_commands(message)  # process all other commands first, if they got nothing, only then proceed
     if message.author == bot.user or message.content != "vice kapot":  # only respond to this message
         return
-    if str(message.author) not in [player.fullname for player in bot.spel.players]:  # only respond to active players
-        return
     with open('bot/.secret', 'r') as file:  # get the access list for this command from the .secret file
         access = [line.strip() for line in file]
     if str(message.author) not in access:  # look up in the list if the user has the correct access
         return
     if message.content == "vice kapot":  # delete all trace of the messages existence if it got this far
         await message.delete()
+    if str(message.author) not in [player.fullname for player in bot.spel.players]:  # only respond to active players
+        return
     response = f"{VICE}\n" \
                f"Iemand (kuch kuck {message.author.mention}) vindt dat je nog niet zat genoeg bent.\n" \
                f"Wie ben ik, simpele bot die ik ben, om dit tegen te spreken?\n" \
