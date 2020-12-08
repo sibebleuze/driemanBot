@@ -57,6 +57,8 @@ class Game():
         player = self.players[names.index(player)]  # find the correct Player in the list of active players
         if (status, player.tempus) in [("ex", True), ("in", False)]:  # if a player isn't already in the desired state
             player.switch_tempus()  # switch the players tempus state
+            while self.beurt.tempus:
+                self.beurt == self.beurt.next_player
             if player.tempus:  # define a message addressing the player for the bot to send
                 response = f"{player.name} heeft nu tempus, tot zo!"
             else:
