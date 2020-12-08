@@ -106,7 +106,7 @@ class Game():
                 while self.beurt.tempus:
                     self.beurt = self.beurt.next_player
             response += self.drink()  # this function builds additional text to tell everyone how much to drink
-        response += f"{self.beurt.name} is aan de beurt."
+        response += f"\n{self.beurt.name} is aan de beurt."
         return response, url  # the response and the url are returned to the bot
 
     def drink(self):
