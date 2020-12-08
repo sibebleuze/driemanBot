@@ -10,3 +10,7 @@ Daarna kan je ```python3 bot.py``` uitvoeren.
 
 De versies van dependencies beschreven in requirements.txt zijn niet per se de enige versies die werken, het zijn echter
 de versies die ik had staan op moment van programmeren, dus deze werken zeker.
+
+Gebruikte packages zijn o.a. discord, dotenv en os om te verbinden met de Discord API en de Discord token in te lezen
+uit .env, traceback en datetime om getimestampede errors weg te schrijven, gc om garbage collection te doen en random om
+dobbelstenen te simuleren.

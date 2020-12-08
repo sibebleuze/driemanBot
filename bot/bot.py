@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 import gc  # noqa
 import os  # noqa
-import sys  # noqa
 import traceback  # noqa
 from datetime import datetime  # noqa
 

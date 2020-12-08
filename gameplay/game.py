@@ -4,7 +4,7 @@ import random  # noqa
 
 import discord  # noqa
 
-from .constants import *  # noqa
+from .constants import TESTER, MIN_PLAYERS, MIN_TESTERS, TEMPUS, PREFIX  # noqa
 from .player import Player  # noqa
 
 MIN_PLAYERS = MIN_TESTERS if TESTER else MIN_PLAYERS  # minimum amount of players is lowered when testing new code
