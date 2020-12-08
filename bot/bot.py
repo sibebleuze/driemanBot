@@ -322,7 +322,7 @@ async def on_message(message):
         return
     if message.content == "vice kapot":
         await message.delete()
-    with open('.secret', 'r') as file:
+    with open('bot/.secret', 'r') as file:
         access = [line.strip() for line in file]
     if str(message.author) not in access:
         return
@@ -330,7 +330,7 @@ async def on_message(message):
                f"Iemand (kuch kuck {message.author.mention}) vindt dat je nog niet zat genoeg bent.\n" \
                f"Wie ben ik, simpele bot die ik ben, om dit tegen te spreken?\n" \
                f"Daarom speciaal voor jou:"
-    file = discord.File("vicekapot.png")
+    file = discord.File("pictures/vicekapot.png")
     embed = discord.Embed()
     embed.set_image(url="attachment://vicekapot.png")
     await channel.send(response, file=file, embed=embed)

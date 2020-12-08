@@ -101,10 +101,10 @@ class Game():
                 player.switch_dbldrieman()
             self.drieman = player
             if self.dbldriemansetting and self.drieman.dbldrieman == 2:
-                url = "dubbeldrieman.jpg"
+                url = "pictures/dubbeldrieman.jpg"
                 response += f"{self.drieman.name} is nu dubbeldrieman.\n"
             else:
-                url = "drieman.png"
+                url = "pictures/drieman.png"
                 response += f"{self.drieman.name} is nu drieman.\n"
         elif sum(dice) == 6:
             player.previous_player.add_to_drink(1)
