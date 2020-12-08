@@ -51,6 +51,13 @@ async def in_drieman_channel(ctx):
     return True
 
 
+@bot.check
+async def oneliner(ctx):
+    if "\n" in ctx.message.content:
+        raise commands.CheckFailure(message="multiline message")
+    return True
+
+
 async def game_busy(ctx):
     if not (bot.spel is not None and isinstance(bot.spel, Game)):
         raise commands.CheckFailure(message="no active game")
@@ -299,7 +306,14 @@ async def on_message(message):
     server = discord.utils.get(bot.guilds, name=SERVER)
     channel = discord.utils.get(server.channels, name=CHANNEL)
     if message.content == "3man help dubbeldrieman":
-        await channel.send("De DriemanBot heeft geen commando 'dubbeldrieman'.")
+        if not (message.channel.name == CHANNEL and message.channel.category.name == CATEGORY):
+            await channel.send(
+                f"{message.author.mention}\n"
+                f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention} onder '{CATEGORY}'.\n"
+                f"Je probeerde de DriemanBot te gebruiken in het kanaal {message.channel.mention} "
+                f"onder '{message.channel.category.name}'. Dat gaat helaas niet.")
+        else:
+            await channel.send("De DriemanBot heeft geen commando 'dubbeldrieman'.")
         return
     await bot.process_commands(message)
     if message.author == bot.user or message.content != "vice kapot" or bot.spel is None:
@@ -361,6 +375,9 @@ async def on_command_error(ctx, error):
                 f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention} onder '{CATEGORY}'.\n"
                 f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention} "
                 f"onder '{ctx.channel.category.name}'. Dat gaat helaas niet.")
+        elif str(error) == "multiline message":
+            await channel.send(f"{ctx.author.mention}\n"
+                               f"De DriemanBot accepteert enkel commando's die bestaan uit een enkele lijn.")
         elif str(error) == "no active game":
             await channel.send(f"Er is geen spel bezig. Gebruik '{PREFIX}{MEEDOEN}' om als eerste mee te doen "
                                "of ga met iemand anders zijn voeten spelen.")

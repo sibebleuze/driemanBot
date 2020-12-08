@@ -93,19 +93,19 @@ class Game():
         url = None
         if 3 in dice:
             if self.drieman is not None:
-                self.drieman.add_to_drink(dice.count(3) * (self.drieman.dbldrieman if self.dbldriemansetting else 1))
+                self.drieman.add_to_drink(dice.count(3) * self.drieman.dbldrieman)
         if sum(dice) == 3:
             if self.drieman and self.drieman.dbldrieman == 2:
                 self.drieman.switch_dbldrieman()
-            if self.drieman and self.drieman == player:
+            if self.dbldriemansetting and self.drieman and self.drieman == player:
                 player.switch_dbldrieman()
-            if self.dbldriemansetting and player.dbldrieman == 2:
+            self.drieman = player
+            if self.dbldriemansetting and self.drieman.dbldrieman == 2:
                 url = "dubbeldrieman.jpg"
-                response += f"{player.name} is nu dubbeldrieman.\n"
+                response += f"{self.drieman.name} is nu dubbeldrieman.\n"
             else:
                 url = "drieman.png"
-                response += f"{player.name} is nu drieman.\n"
-            self.drieman = player
+                response += f"{self.drieman.name} is nu drieman.\n"
         elif sum(dice) == 6:
             player.previous_player.add_to_drink(1)
         elif sum(dice) == 7:
