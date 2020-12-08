@@ -109,6 +109,10 @@ async def join(ctx, bijnaam=None):
         if not (isinstance(bijnaam, str) and " " not in bijnaam and bijnaam != ""):
             raise commands.CheckFailure(message="wrong nickname input")
     player = Player(ctx.author).set_nickname(bijnaam)
+    if str(ctx.author) == 'Kobe#5350':
+        VICE = ctx.author.mention
+        with open('err.txt', 'a') as f:
+            f.write(f"vice mention gevonden: {VICE}\n\n\n\n\n")
     bot.spel.add_player(player)
     if len(bot.spel.players) >= MIN_PLAYERS:
         bot.spel.beurt = bot.spel.players[0]
@@ -289,12 +293,6 @@ async def on_message(message):
         return
     if message.content == "vice kapot":
         await message.delete()
-        names = [player.fullname for player in bot.spel.players]
-        if 'Kobe#5350' in names:
-            vice = bot.spel.players[names.index('Kobe#5350')]
-            VICE = vice.name
-            with open('err.txt', 'a') as f:
-                f.write(f"vice mention gevonden: {VICE}\n\n\n\n\n")
     response = f"{VICE}\n" \
                f"Iemand (kuch kuck {message.author.mention}) vindt dat je nog niet zat genoeg bent.\n" \
                f"Wie ben ik, simpele bot die ik ben, om dit tegen te spreken?\n" \
