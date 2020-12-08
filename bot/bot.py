@@ -289,7 +289,13 @@ async def on_message(message):
         return
     if message.content == "vice kapot":
         await message.delete()
-    response = "@Kobe#5350\n" \
+        names = [player.fullname for player in bot.spel.players]
+        if 'Kobe#5350' in names:
+            vice = bot.spel.players[names.index('Kobe#5350')]
+            VICE = vice.name
+            with open('err.txt', 'a') as f:
+                f.write(f"vice mention gevonden: {VICE}\n\n\n\n\n")
+    response = f"{VICE}\n" \
                f"Iemand (kuch kuck {message.author.mention}) vindt dat je nog niet zat genoeg bent.\n" \
                f"Wie ben ik, simpele bot die ik ben, om dit tegen te spreken?\n" \
                f"Daarom speciaal voor jou:"
@@ -311,8 +317,7 @@ async def on_error(error, *args, **kwargs):
         f.write("\n\n\n\n\n")
     server = discord.utils.get(bot.guilds, name=SERVER)
     channel = discord.utils.get(server.channels, name=CHANNEL)
-    await channel.send(f"@here\n"
-                       "Er is een fout opgetreden. Contacteer de beheerder van de DriemanBot.")
+    await channel.send(f"{PROGRAMMER}, er is een fout opgetreden.")
 
 
 @bot.event
@@ -366,8 +371,7 @@ async def on_command_error(ctx, error):
             await channel.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
         else:
             write_error()
-            await channel.send(f"Het commando '{ctx.message.content}' heeft iets raar gedaan. "
-                               f"Contacteer de beheerder van de DriemanBot.")
+            await channel.send(f"{PROGRAMMER}, het commando '{ctx.message.content}' heeft iets raar gedaan.")
     elif isinstance(error, commands.errors.CommandNotFound):
         if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
             await channel.send(
@@ -389,8 +393,7 @@ async def on_command_error(ctx, error):
     else:
         write_error()
         await channel.send(
-            f"{ctx.author.mention}\n"
-            f"Het commando '{ctx.message.content}' is gefaald. Contacteer de beheerder van de DriemanBot.")
+            f"{PROGRAMMER}, het commando '{ctx.message.content}' is gefaald.")
 
 
 bot.run(TOKEN)  # TODO: add comments everywhere to explain what the code does
