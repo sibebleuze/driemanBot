@@ -58,21 +58,22 @@ async def oneliner(ctx):
     return True
 
 
-async def not_enough_players(ctx):
-    if not len(bot.spel.players) >= MIN_PLAYERS:
-        raise commands.CheckFailure(message="not enough players")
+async def is_new_player(ctx):
+    if str(ctx.author) in [player.fullname for player in bot.spel.players]:
+        raise commands.CheckFailure(message="player already exists")
     return True
 
 
-async def player_exists(ctx):
+async def does_player_exist(ctx):
     if str(ctx.author) not in [player.fullname for player in bot.spel.players]:
         raise commands.CheckFailure(message="player doesn't exist")
     return True
 
 
-@commands.check(not_enough_players)
-async def not_your_turn(ctx):
-    if str(ctx.author) != bot.spel.beurt.fullname:
+async def can_you_roll(ctx):
+    if not len(bot.spel.players) >= MIN_PLAYERS:
+        raise commands.CheckFailure(message="not enough players")
+    elif str(ctx.author) != bot.spel.beurt.fullname:
         raise commands.CheckFailure(message="not your turn")
     return True
 
@@ -101,13 +102,12 @@ async def rules(ctx):
 @bot.command(name=MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers.\n"
                                 "Met het optionele argument 'bijnaam' kan je een bijnaam "
                                 "bestaande uit 1 woord kiezen.")
+@commands.check(is_new_player)
 async def join(ctx, bijnaam=None):
     response = ""
     if bijnaam is not None:
         if not (isinstance(bijnaam, str) and " " not in bijnaam and bijnaam != ""):
             raise commands.CheckFailure(message="wrong nickname input")
-    if str(ctx.author) in [player.fullname for player in bot.spel.players]:
-        raise commands.CheckFailure(message="player already exists")
     player = Player(ctx.author).set_nickname(bijnaam)
     bot.spel.add_player(player)
     if len(bot.spel.players) >= MIN_PLAYERS:
@@ -118,7 +118,7 @@ async def join(ctx, bijnaam=None):
 
 @bot.command(name=BIJNAAM, help='Stel je bijnaam in als je dat nog niet gedaan had '
                                 'of wijzig je bijnaam als je een andere wilt.')
-@commands.check(player_exists)
+@commands.check(does_player_exist)
 async def nickname(ctx, *, bijnaam: str):
     if " " in bijnaam or bijnaam == "":
         raise commands.CheckFailure(message="wrong nickname input")
@@ -128,7 +128,7 @@ async def nickname(ctx, *, bijnaam: str):
 
 
 @bot.command(name=WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers.')
-@commands.check(player_exists)
+@commands.check(does_player_exist)
 async def leave(ctx):
     response = bot.spel.remove_player(str(ctx.author))
     if not bot.spel.players:
@@ -182,8 +182,7 @@ async def who_is_here(ctx):
 
 
 @bot.command(name=ROL, help='Rol de dobbelsteen als het jouw beurt is.')
-@commands.check(not_enough_players)
-@commands.check(not_your_turn)
+@commands.check(can_you_roll)
 async def roll(ctx):
     response, url = bot.spel.roll(str(ctx.author))
     if url is not None:
@@ -199,7 +198,7 @@ async def roll(ctx):
                                "en deelt je dit mee aan het einde van je tempus. "
                                f"Gebruik '{PREFIX}{TEMPUS} in' om je tempus te beginnen en "
                                f"'{PREFIX}{TEMPUS} ex' om je tempus te eindigen en je achterstand te weten te komen.")
-@commands.check(player_exists)
+@commands.check(does_player_exist)
 async def tempus(ctx, status: str):
     if status not in ["in", "ex"]:
         raise commands.CheckFailure(message="wrong tempus status")
@@ -212,8 +211,8 @@ async def tempus(ctx, status: str):
                                  f"speler2:drankhoeveelheid2 speler3:drankhoeveelheid3'\nenz. "
                                  "Hierbij zijn zowel speler als drankhoeveelheid een positief geheel getal. "
                                  f"Om te zien welke speler welk getal heeft, kan je '{PREFIX}{SPELERS}' gebruiken.")
-@commands.check(player_exists)
-async def distribute(ctx, *, uitgedeeld):
+@commands.check(does_player_exist)
+async def distribute(ctx, *, uitgedeeld: str):
     to_distribute = [x.split(":") for x in uitgedeeld.split(" ")]
     try:
         to_distribute = [(int(x), int(y)) for x, y in to_distribute]
@@ -367,9 +366,8 @@ async def on_command_error(ctx, error):
             await channel.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
         else:
             write_error()
-            await channel.send(
-                f"Het commando '{ctx.message.content}' heeft iets raar gedaan. "
-                f"Contacteer de beheerder van de DriemanBot.")
+            await channel.send(f"Het commando '{ctx.message.content}' heeft iets raar gedaan. "
+                               f"Contacteer de beheerder van de DriemanBot.")
     elif isinstance(error, commands.errors.CommandNotFound):
         if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
             await channel.send(
