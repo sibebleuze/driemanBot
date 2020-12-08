@@ -400,4 +400,4 @@ async def on_command_error(ctx, error):  # command error handling happens here
         await channel.send(f"{PROGRAMMER}, het commando '{ctx.message.content}' is gefaald.")
 
 
-bot.run(TOKEN)  # TODO: add comments everywhere to explain what the code does
+bot.run(TOKEN)
