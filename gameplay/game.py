@@ -103,7 +103,10 @@ class Game():
                 player.uitdelen += dice[0]  # as many as one dice counts
             if not (sum(dice) in range(6, 8 + 1) or dice[0] == dice[1]):  # if nothing happens (except for 3s)
                 self.beurt = self.beurt.next_player  # the turn goes to the next person
+                while self.beurt.tempus:
+                    self.beurt = self.beurt.next_player
             response += self.drink()  # this function builds additional text to tell everyone how much to drink
+        response += f"{self.beurt.name} is aan de beurt."
         return response, url  # the response and the url are returned to the bot
 
     def drink(self):
@@ -127,7 +130,7 @@ class Game():
         names = [player.fullname for player in self.players]  # generate a list with the full names of players, in order
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]  # find the correct Player in the list of active players
-        return player.uitdelen <= units and (player.uitdelen > 0 or zero_allowed)  # determine if they do what they want
+        return player.uitdelen >= units and (player.uitdelen > 0 or zero_allowed)  # determine if they do what they want
 
     def distributor(self, player, other_player, units):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."

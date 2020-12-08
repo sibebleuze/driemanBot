@@ -109,10 +109,10 @@ async def join(ctx, bijnaam=None):  # add a new player to the game
         if not (isinstance(bijnaam, str) and " " not in bijnaam and bijnaam != ""):  # no empty strings or spaces
             raise commands.CheckFailure(message="wrong nickname input")
     player = Player(ctx.author).set_nickname(bijnaam)  # initiate the Player and set its nickname
-    if str(ctx.author) == 'Kobe#5350':  # temporary addition in code to try to capture vice mention
-        VICE = ctx.author.mention  # set VICE to this new value
-        with open('err.txt', 'a') as f:  # write it to errorlog
-            f.write(f"vice mention gevonden: {VICE}\n\n\n\n\n")
+    # if str(ctx.author) == 'Kobe#5350':  # temporary addition in code to try to capture vice mention
+    #     VICE = ctx.author.mention  # set VICE to this new value
+    #     with open('err.txt', 'a') as f:  # write it to errorlog
+    #         f.write(f"vice mention gevonden: {VICE}\n\n\n\n\n")
     bot.spel.add_player(player)  # add the new Player object to the active player list
     if len(bot.spel.players) >= MIN_PLAYERS and bot.spel.beurt is None:  # when the minimum player limit is reached,
         bot.spel.beurt = bot.spel.players[0]  # initiate the turn to the first player who joined
