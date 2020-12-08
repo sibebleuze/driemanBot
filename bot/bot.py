@@ -41,7 +41,7 @@ class CustomHelpCommand(commands.DefaultHelpCommand):
 
 help_command = CustomHelpCommand()
 bot = commands.Bot(command_prefix=PREFIX, help_command=help_command)
-bot.spel = None
+bot.spel = Game()
 
 
 @bot.check
@@ -58,35 +58,19 @@ async def oneliner(ctx):
     return True
 
 
-async def game_busy(ctx):
-    if not (bot.spel is not None and isinstance(bot.spel, Game)):
-        raise commands.CheckFailure(message="no active game")
+async def not_enough_players(ctx):
+    if not len(bot.spel.players) >= MIN_PLAYERS:
+        raise commands.CheckFailure(message="not enough players")
     return True
 
 
-@commands.check(game_busy)
-async def game_not_started(ctx):
-    if bot.spel.started:
-        raise commands.CheckFailure(message="game already started")
-    return True
-
-
-@commands.check(game_busy)
-async def game_started(ctx):
-    if not bot.spel.started:
-        raise commands.CheckFailure(message="game not started")
-    return True
-
-
-@commands.check(game_busy)
 async def player_exists(ctx):
     if str(ctx.author) not in [player.fullname for player in bot.spel.players]:
         raise commands.CheckFailure(message="player doesn't exist")
     return True
 
 
-@commands.check(game_busy)
-@commands.check(game_started)
+@commands.check(not_enough_players)
 async def not_your_turn(ctx):
     if str(ctx.author) != bot.spel.beurt.fullname:
         raise commands.CheckFailure(message="not your turn")
@@ -119,23 +103,21 @@ async def rules(ctx):
                                 "bestaande uit 1 woord kiezen.")
 async def join(ctx, bijnaam=None):
     response = ""
-    if not bot.spel:
-        bot.spel = Game()
-        response += "Er is een nieuw spel begonnen.\n"
     if bijnaam is not None:
         if not (isinstance(bijnaam, str) and " " not in bijnaam and bijnaam != ""):
             raise commands.CheckFailure(message="wrong nickname input")
-    player = Player(ctx.author).set_nickname(bijnaam)
-    if player.fullname in [player.fullname for player in bot.spel.players]:
+    if str(ctx.author) in [player.fullname for player in bot.spel.players]:
         raise commands.CheckFailure(message="player already exists")
+    player = Player(ctx.author).set_nickname(bijnaam)
     bot.spel.add_player(player)
+    if len(bot.spel.players) >= MIN_PLAYERS:
+        bot.spel.beurt = bot.spel.players[0]
     response += f"{player.name} ({player.nickname}) is in het spel gekomen."
     await ctx.channel.send(response)
 
 
 @bot.command(name=BIJNAAM, help='Stel je bijnaam in als je dat nog niet gedaan had '
                                 'of wijzig je bijnaam als je een andere wilt.')
-@commands.check(game_busy)
 @commands.check(player_exists)
 async def nickname(ctx, *, bijnaam: str):
     if " " in bijnaam or bijnaam == "":
@@ -146,55 +128,43 @@ async def nickname(ctx, *, bijnaam: str):
 
 
 @bot.command(name=WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers.')
-@commands.check(game_busy)
 @commands.check(player_exists)
 async def leave(ctx):
     response = bot.spel.remove_player(str(ctx.author))
     if not bot.spel.players:
         response += "\nDe laatste speler heeft het spel verlaten. Het spel is nu afgelopen.\n" \
-                    f"Een nieuw spel kan begonnen worden als er opnieuw {MIN_PLAYERS} spelers zijn."
-        bot.spel = None
+                    f"Een nieuw spel begint als er opnieuw {MIN_PLAYERS} spelers zijn."
+        bot.spel = Game()
         gc.collect()
     elif len(bot.spel.players) <= (MIN_PLAYERS - 1):
         response += "\nEr zijn niet genoeg spelers om verder te spelen.\n" \
                     "Wacht tot er opnieuw genoeg spelers zijn of beëindig het spel.\n" \
                     f"Een nieuwe speler kan meedoen door '{PREFIX}{MEEDOEN}' te typen.\n" \
                     f"Het spel kan beëindigd worden door '{PREFIX}{STOP}' te typen."
-        bot.spel.started = False
     await ctx.channel.send(response)
 
 
 @bot.command(name=STOP, help=f'Stop het spel als er minder dan {MIN_PLAYERS} actieve spelers zijn.')
-@commands.check(game_busy)
 async def stop(ctx):
     response = ""
     if len(bot.spel.players) < MIN_PLAYERS:
         for player in bot.spel.players:
             response += bot.spel.remove_player(player.fullname)
         response += "\nHet spel is nu afgelopen.\n" \
-                    f"Een nieuw spel kan begonnen worden als er opnieuw {MIN_PLAYERS} spelers zijn."
-        bot.spel = None
+                    f"Een nieuw spel begint als er opnieuw {MIN_PLAYERS} spelers zijn."
+        bot.spel = Game()
         gc.collect()
     else:
         response = f"Er zijn nog meer dan {MIN_PLAYERS - 1} spelers in het spel. " \
                    "Om te zorgen dat niet zomaar iedereen een actief spel kan afbreken," \
                    f"kan het commando '{PREFIX}{STOP}' pas gebruikt worden " \
                    f"als er minder dan {MIN_PLAYERS} overblijven. " \
-                   "Als je echt wil stoppen, " \
+                   "Als je echt het spel wil stoppen, " \
                    f"zal/zullen nog {len(bot.spel.players) - (MIN_PLAYERS - 1)} speler(s) het spel moeten verlaten."
     await ctx.channel.send(response)
 
 
-@bot.command(name=START, help='Start het spel als er voldoende spelers zijn.')
-@commands.check(game_busy)
-@commands.check(game_not_started)
-async def start(ctx):
-    response = bot.spel.start_game()
-    await ctx.channel.send(response)
-
-
 @bot.command(name=SPELERS, help='Geeft een lijst van alle actieve spelers.')
-@commands.check(game_busy)
 async def who_is_here(ctx):
     embed = discord.Embed(title='Overzicht actieve spelers')
     for i, player in enumerate(bot.spel.players):
@@ -204,7 +174,7 @@ async def who_is_here(ctx):
                               f"{player.achterstand}\nUit te delen: {player.uitdelen}",
                         inline=True)
     response = ""
-    if bot.spel.started:
+    if bot.spel.beurt is not None:
         response += f"{bot.spel.beurt.name} is aan de beurt."
     if bot.spel.drieman is not None:
         response += f" {bot.spel.drieman.name} is op dit moment drieman."
@@ -212,8 +182,7 @@ async def who_is_here(ctx):
 
 
 @bot.command(name=ROL, help='Rol de dobbelsteen als het jouw beurt is.')
-@commands.check(game_busy)
-@commands.check(game_started)
+@commands.check(not_enough_players)
 @commands.check(not_your_turn)
 async def roll(ctx):
     response, url = bot.spel.roll(str(ctx.author))
@@ -230,7 +199,6 @@ async def roll(ctx):
                                "en deelt je dit mee aan het einde van je tempus. "
                                f"Gebruik '{PREFIX}{TEMPUS} in' om je tempus te beginnen en "
                                f"'{PREFIX}{TEMPUS} ex' om je tempus te eindigen en je achterstand te weten te komen.")
-@commands.check(game_busy)
 @commands.check(player_exists)
 async def tempus(ctx, status: str):
     if status not in ["in", "ex"]:
@@ -239,14 +207,12 @@ async def tempus(ctx, status: str):
     await ctx.channel.send(response)
 
 
-@bot.command(name=UITDELEN, help="Zeg aan wie je drankeenheden wilt uitdelen en hoeveel. "
+@bot.command(name=UITDELEN, help="Zeg aan wie je drankeenheden wilt uitdelen en hoeveel.\n"
                                  f"Gebruik hiervoor het format\n'{PREFIX}{UITDELEN} speler1:drankhoeveelheid1 "
                                  f"speler2:drankhoeveelheid2 speler3:drankhoeveelheid3'\nenz. "
                                  "Hierbij zijn zowel speler als drankhoeveelheid een positief geheel getal. "
                                  f"Om te zien welke speler welk getal heeft, kan je '{PREFIX}{SPELERS}' gebruiken.")
-@commands.check(game_busy)
 @commands.check(player_exists)
-@commands.check(game_started)
 async def distribute(ctx, *, uitgedeeld):
     to_distribute = [x.split(":") for x in uitgedeeld.split(" ")]
     try:
@@ -279,8 +245,6 @@ help=f"Als dit commando geactiveerd wordt met '{PREFIX}{DUBBELDRIEMAN} in', "
 
 @bot.command(name='dubbeldrieman', pass_context=True, hidden=True)
 async def double_3man(ctx):
-    if not (bot.spel is not None and isinstance(bot.spel, Game)):
-        raise commands.errors.CommandNotFound()
     if str(ctx.author) not in [player.fullname for player in bot.spel.players]:
         raise commands.errors.CommandNotFound()
     status = ctx.message.content[-2:]
@@ -316,16 +280,16 @@ async def on_message(message):
             await channel.send("De DriemanBot heeft geen commando 'dubbeldrieman'.")
         return
     await bot.process_commands(message)
-    if message.author == bot.user or message.content != "vice kapot" or bot.spel is None:
+    if message.author == bot.user or message.content != "vice kapot":
         return
-    if not isinstance(bot.spel, Game) or str(message.author) not in [player.fullname for player in bot.spel.players]:
+    if str(message.author) not in [player.fullname for player in bot.spel.players]:
         return
-    if message.content == "vice kapot":
-        await message.delete()
     with open('bot/.secret', 'r') as file:
         access = [line.strip() for line in file]
     if str(message.author) not in access:
         return
+    if message.content == "vice kapot":
+        await message.delete()
     response = "@Kobe#5350\n" \
                f"Iemand (kuch kuck {message.author.mention}) vindt dat je nog niet zat genoeg bent.\n" \
                f"Wie ben ik, simpele bot die ik ben, om dit tegen te spreken?\n" \
@@ -378,19 +342,13 @@ async def on_command_error(ctx, error):
         elif str(error) == "multiline message":
             await channel.send(f"{ctx.author.mention}\n"
                                f"De DriemanBot accepteert enkel commando's die bestaan uit een enkele lijn.")
-        elif str(error) == "no active game":
-            await channel.send(f"Er is geen spel bezig. Gebruik '{PREFIX}{MEEDOEN}' om als eerste mee te doen "
-                               "of ga met iemand anders zijn voeten spelen.")
-        elif str(error) == "game already started":
-            await channel.send(f"Het spel is al begonnen. "
-                               f"Als je een nieuw spel wil beginnen, gebruik dan eerst '{PREFIX}{STOP}'.")
         elif str(error) == "wrong nickname input":
             await channel.send(f"De bijnaam die je hebt ingegeven kan niet geaccepteerd worden, kies iets anders.")
         elif str(error) == "player doesn't exist":
-            await channel.send(f"Je speelt nog niet mee met dit spel. Gebruik '{PREFIX}{MEEDOEN}' om mee te doen.\n"
+            await channel.send(f"Je speelt nog niet mee. Gebruik '{PREFIX}{MEEDOEN}' om mee te doen.\n"
                                f"Daarna kan je dit commando pas gebruiken.")
         elif str(error) == "player already exists":
-            await channel.send(f"Je speelt al mee met dit spel. Gebruik '{PREFIX}{WEGGAAN}' om weg te gaan.\n"
+            await channel.send(f"Je speelt al mee. Gebruik '{PREFIX}{WEGGAAN}' om weg te gaan.\n"
                                f"Daarna kan je dit commando pas opnieuw gebruiken.")
         elif str(error) == "wrong tempus status":
             await channel.send(f"Je kan enkel '{PREFIX}{TEMPUS} in' of '{PREFIX}{TEMPUS} ex' gebruiken."
@@ -398,8 +356,11 @@ async def on_command_error(ctx, error):
         elif str(error) == "not your turn":
             await channel.send("Je bent nu niet aan de beurt, wacht alsjeblieft geduldig je beurt af.\n"
                                f"Het is nu de beurt aan {bot.spel.beurt.name}")
-        elif str(error) == "game not started":
-            await channel.send(f"Het spel is nog niet gestart. Gebruik eerst '{PREFIX}{START}' om het spel te starten.")
+        elif str(error) == "not enough players":
+            await channel.send("Nog niet genoeg spelers, "
+                               f"je moet minstens met {MIN_PLAYERS} zijn om te kunnen driemannen (zie art. 1).\n"
+                               f"Wacht tot er nog {MIN_PLAYERS - len(bot.spel.players)} speler(s) "
+                               f"meer meedoet/meedoen.")
         elif str(error) == "not enough drink units left":
             await channel.send("Je hebt niet genoeg drankeenheden meer over om uit te delen.")
         elif str(error) == "wrong distribute call":

@@ -15,7 +15,6 @@ class Game():
     def __init__(self):
         self.drieman = None
         self.players = []
-        self.started = False
         self.beurt = None
         self.dbldriemansetting = False
 
@@ -48,17 +47,6 @@ class Game():
             player.drinking()
         response += f"{player.name} heeft in totaal {player.totaal} drankeenheden gedronken.\n" \
                     f"{player.name} heeft het spel verlaten. Slaap zacht kameraad."
-        return response
-
-    def start_game(self):
-        if len(self.players) >= MIN_PLAYERS:
-            self.started = True
-            self.beurt = self.players[0]
-            response = "Het spel is gestart."
-        else:
-            response = "Nog niet genoeg spelers, " \
-                       f"je moet minstens met {MIN_PLAYERS} zijn om te kunnen driemannen (zie art. 1).\n" \
-                       f"Wacht tot er nog {MIN_PLAYERS - len(self.players)} speler(s) meer meedoet/meedoen."
         return response
 
     def player_tempus(self, player, status):
