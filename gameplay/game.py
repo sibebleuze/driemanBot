@@ -74,37 +74,38 @@ class Game():
         player = self.players[names.index(player)]
         assert player == self.beurt, \
             "Een speler die niet aan de beurt is heeft geworpen."  # normaal gezien gecheckt voor de functiecall
-        if player.tempus:
-            return f"Je bent nog in modus '{TEMPUS} in'. Gebruik '{PREFIX}{TEMPUS} ex' om verder te spelen."
-        dice = [random.randint(1, 6) for _ in range(2)]
-        response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
         url = None
-        if 3 in dice:
-            if self.drieman is not None:
-                self.drieman.add_to_drink(dice.count(3) * self.drieman.dbldrieman)
-        if sum(dice) == 3:
-            if self.drieman and self.drieman.dbldrieman == 2:
-                self.drieman.switch_dbldrieman()
-            if self.dbldriemansetting and self.drieman and self.drieman == player:
-                player.switch_dbldrieman()
-            self.drieman = player
-            if self.dbldriemansetting and self.drieman.dbldrieman == 2:
-                url = "pictures/dubbeldrieman.jpg"
-                response += f"{self.drieman.name} is nu dubbeldrieman.\n"
-            else:
-                url = "pictures/drieman.png"
-                response += f"{self.drieman.name} is nu drieman.\n"
-        elif sum(dice) == 6:
-            player.previous_player.add_to_drink(1)
-        elif sum(dice) == 7:
-            player.add_to_drink(1)
-        elif sum(dice) == 8:
-            player.next_player.add_to_drink(1)
-        if dice[0] == dice[1]:
-            player.uitdelen += dice[0]
-        if not (sum(dice) in range(6, 8 + 1) or dice[0] == dice[1]):
-            self.beurt = self.beurt.next_player
-        response += self.drink()
+        if player.tempus:
+            response = f"Je bent nog in modus '{TEMPUS} in'. Gebruik '{PREFIX}{TEMPUS} ex' om verder te spelen."
+        else:
+            dice = [random.randint(1, 6) for _ in range(2)]
+            response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
+            if 3 in dice:
+                if self.drieman is not None:
+                    self.drieman.add_to_drink(dice.count(3) * self.drieman.dbldrieman)
+            if sum(dice) == 3:
+                if self.drieman and self.drieman.dbldrieman == 2:
+                    self.drieman.switch_dbldrieman()
+                if self.dbldriemansetting and self.drieman and self.drieman == player:
+                    player.switch_dbldrieman()
+                self.drieman = player
+                if self.dbldriemansetting and self.drieman.dbldrieman == 2:
+                    url = "pictures/dubbeldrieman.jpg"
+                    response += f"{self.drieman.name} is nu dubbeldrieman.\n"
+                else:
+                    url = "pictures/drieman.png"
+                    response += f"{self.drieman.name} is nu drieman.\n"
+            elif sum(dice) == 6:
+                player.previous_player.add_to_drink(1)
+            elif sum(dice) == 7:
+                player.add_to_drink(1)
+            elif sum(dice) == 8:
+                player.next_player.add_to_drink(1)
+            if dice[0] == dice[1]:
+                player.uitdelen += dice[0]
+            if not (sum(dice) in range(6, 8 + 1) or dice[0] == dice[1]):
+                self.beurt = self.beurt.next_player
+            response += self.drink()
         return response, url
 
     def drink(self):
