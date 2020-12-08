@@ -15,6 +15,7 @@ from gameplay.player import Player  # noqa
 gc.enable()  # explicitely enable garbage collector
 load_dotenv()  # load the Discord token as environment variable
 TOKEN = os.getenv('DISCORD_TOKEN')
+# TODO: define server, channel and category by id instead of string name
 SERVER = TEST_SERVER if TESTER else WINA_SERVER  # use different values when testing vs. when actually in use,
 CHANNEL = TEST_CHANNEL if TESTER else DRIEMAN_CHANNEL  # these values all together determine server, channel
 CATEGORY = TEST_CATEGORY if TESTER else DRIEMAN_CATEGORY  # and even category
@@ -308,37 +309,38 @@ async def on_message(message):
 
 
 @bot.event
-async def on_error(error, *args, **kwargs):  # error handling happens here
+async def on_error(error, *args, **kwargs):  # general error handling happens here
     with open('err.txt', 'a') as f:  # open the error log file
         f.write(f"{str(datetime.now())}\n{str(error)}\n")  # write the date, time and error
         try:  # try to also write the error traceback
             traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
-        except Exception as exc:  #
+        except Exception as exc:  # if this fails, print the error of this fail instead
             f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
             traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
-        f.write("\n\n\n\n\n")
-    server = discord.utils.get(bot.guilds, name=SERVER)
-    channel = discord.utils.get(server.channels, name=CHANNEL)
-    await channel.send(f"{PROGRAMMER}, er is een fout opgetreden.")
+        f.write("\n\n\n\n\n")  # some whitespace to distinguish different errors
+    server = discord.utils.get(bot.guilds, name=SERVER)  # find the correct server
+    channel = discord.utils.get(server.channels, name=CHANNEL)  # find the correct channel
+    await channel.send(f"{PROGRAMMER}, er is een fout opgetreden.")  # send error message and mention me
 
 
 @bot.event
-async def on_command_error(ctx, error):
-    def write_error():
-        with open('err.txt', 'a') as f:
+async def on_command_error(ctx, error):  # command error handling happens here
+    def write_error():  # function for writing errors to error log
+        with open('err.txt', 'a') as f:  # open the file to append
             f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
                     f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
-                    f"{ctx.message.jump_url}\n{str(error)}\n")
-            try:
+                    f"{ctx.message.jump_url}\n{str(error)}\n")  # write some info on what caused the error
+            try:  # try to also write the error traceback
                 traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
-            except Exception as exc:
+            except Exception as exc:  # if this fails, print the error of this fail instead
                 f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
                 traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
-            f.write("\n\n\n\n\n")
+            f.write("\n\n\n\n\n")  # some whitespace to distinguish different errors
 
-    server = discord.utils.get(bot.guilds, name=SERVER)
-    channel = discord.utils.get(server.channels, name=CHANNEL)
-    if isinstance(error, commands.errors.CheckFailure):
+    server = discord.utils.get(bot.guilds, name=SERVER)  # find the correct server
+    channel = discord.utils.get(server.channels, name=CHANNEL)  # find the correct channel
+    if isinstance(error, commands.errors.CheckFailure):  # one of the checks failed, someone did something wrong
+        # below check failures are pretty self explanatory
         if str(error) == "wrong channel or category":
             await channel.send(
                 f"{ctx.author.mention}\n"
@@ -371,31 +373,31 @@ async def on_command_error(ctx, error):
             await channel.send("Je hebt niet genoeg drankeenheden meer over om uit te delen.")
         elif str(error) == "wrong distribute call":
             await channel.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
-        else:
-            write_error()
+        else:  # in case it isn't one of the above cases, something actually went wrong
+            write_error()  # in this case, write the error to the error log and alert me with a mention
             await channel.send(f"{PROGRAMMER}, het commando '{ctx.message.content}' heeft iets raar gedaan.")
-    elif isinstance(error, commands.errors.CommandNotFound):
-        if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
+    elif isinstance(error, commands.errors.CommandNotFound):  # someone entered a non existing command
+        if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):  # in the wrong channel
             await channel.send(
                 f"{ctx.author.mention}\n"
                 f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention} onder '{CATEGORY}'.\n"
                 f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention} "
                 f"onder '{ctx.channel.category.name}'. Dat gaat helaas niet.")
-        else:
+        else:  # or in the correct one, either way it's not my problem until they make it my problem
             await channel.send(f"{ctx.author.mention}\n"
                                f"Het commando '{ctx.message.content}' is onbekend. "
                                "Contacteer de beheerder van de DriemanBot als je denkt dat dit zou moeten werken.")
-    elif isinstance(error, commands.errors.MissingRequiredArgument):
+    elif isinstance(error, commands.errors.MissingRequiredArgument):  # also pretty self explanatory
         response = f"Het commando '{ctx.message.content}' heeft een verplicht argument dat hier ontbreekt."
         if ctx.message.content[:len(PREFIX) + len(UITDELEN)] == PREFIX + UITDELEN:
-            response += "\nGebruik het juiste format om drankeenheden uit te delen, anders lukt het niet."
+            response += "\nGebruik het juiste format om drankeenheden uit te delen, anders lukt het niet." \
+                        f"Met '{PREFIX} help {UITDELEN}' kan je zien hoe het moet."
         elif ctx.message.content[:len(PREFIX) + len(TEMPUS)] == PREFIX + TEMPUS:
             response += f"\n'{ctx.message.content}' is geen geldig tempus commando."
-        await channel.send(response)
-    else:
-        write_error()
-        await channel.send(
-            f"{PROGRAMMER}, het commando '{ctx.message.content}' is gefaald.")
+        await channel.send(response)  # tell them what they did wrong
+    else:  # something actually went wrong
+        write_error()  # in this case, write the error to the error log and alert me with a mention
+        await channel.send(f"{PROGRAMMER}, het commando '{ctx.message.content}' is gefaald.")
 
 
 bot.run(TOKEN)  # TODO: add comments everywhere to explain what the code does
