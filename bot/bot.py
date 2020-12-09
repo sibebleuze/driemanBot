@@ -7,6 +7,7 @@ from datetime import datetime  # noqa
 import discord  # noqa
 from discord.ext import commands  # noqa
 from dotenv import load_dotenv  # noqa
+from copy import deepcopy  # noqa
 
 from gameplay.constants import *  # noqa
 from gameplay.game import Game  # noqa
@@ -92,6 +93,8 @@ async def on_ready():  # the output here is only visible at server level and not
               f'{channel.name} (id: {channel.id})')  # print channel name and id
         members = '\n - '.join([member.name for member in server.members])  # find all member the bot has access to
         print(f'Visible Server Members:\n - {members}')  # print these members, if correct, this should be the bot only
+    else:
+        print(f'{bot.user.name} is verbonden.')
 
 
 @bot.command(name=REGELS, help='De link naar de regels printen.')
@@ -149,8 +152,8 @@ async def leave(ctx):  # remove a player from the game
 async def stop(ctx):  # explicitly stop the game if not enough players are left
     response = ""
     if len(bot.spel.players) < MIN_PLAYERS:  # only possible when the amount of players falls below minimum
-        for player in bot.spel.players:  # first, throw out all remaining players
-            response += bot.spel.remove_player(player.fullname)
+        # first, throw out all remaining players; deepcopy because removing stuff from list fucks things up otherwise
+        response += "\n".join([bot.spel.remove_player(player.fullname) for player in deepcopy(bot.spel.players)])
         response += "\nHet spel is nu afgelopen.\n" \
                     f"Een nieuw spel begint als er opnieuw {MIN_PLAYERS} spelers zijn."
         bot.spel = Game()  # print a final message and start a new game
