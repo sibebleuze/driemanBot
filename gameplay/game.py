@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import os  # noqa
-import random  # noqa
 
 import discord  # noqa
+import numpy as np  # noqa
 
 from .constants import TESTER, MIN_PLAYERS, MIN_TESTERS, TEMPUS, PREFIX  # noqa
 from .player import Player  # noqa
@@ -79,7 +79,7 @@ class Game():
         if player.tempus:  # if the player is in tempus mode, he cannot roll the dice
             response = f"Je bent nog in modus '{TEMPUS} in'. Gebruik '{PREFIX}{TEMPUS} ex' om verder te spelen."
         else:  # the player can roll the dice here and a succession of events is calculated
-            dice = [random.randint(1, 6) for _ in range(2)]  # draw two random numbers between 1 and 6, borders included
+            dice = list(np.random.randint(1, 6, 2))  # draw two random numbers between 1 and 6, borders included
             response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
             if 3 in dice and self.drieman is not None:  # the drieman drinks one unit per 3 on the dice
                 self.drieman.add_to_drink(dice.count(3) * self.drieman.dbldrieman)  # or two if he is dubbeldrieman
