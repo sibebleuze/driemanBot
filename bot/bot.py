@@ -2,24 +2,23 @@
 import gc  # noqa
 import os  # noqa
 import traceback  # noqa
+from copy import deepcopy  # noqa
 from datetime import datetime  # noqa
 
 import discord  # noqa
 from discord.ext import commands  # noqa
 from dotenv import load_dotenv  # noqa
-from copy import deepcopy  # noqa
 
 from gameplay.constants import *  # noqa
 from gameplay.game import Game  # noqa
 from gameplay.player import Player  # noqa
 
-gc.enable()  # explicitely enable garbage collector
+gc.enable()  # explicitly enable garbage collector
 load_dotenv()  # load the Discord token as environment variable
 TOKEN = os.getenv('DISCORD_TOKEN')
-# TODO: define server, channel and category by id instead of string name
 SERVER = TEST_SERVER if TESTER else WINA_SERVER  # use different values when testing vs. when actually in use,
 CHANNEL = TEST_CHANNEL if TESTER else DRIEMAN_CHANNEL  # these values all together determine server, channel
-CATEGORY = TEST_CATEGORY if TESTER else DRIEMAN_CATEGORY  # and even category
+CATEGORY = TEST_CATEGORY if TESTER else DRIEMAN_CATEGORY  # and even category, all by unique IDs
 MIN_PLAYERS = MIN_TESTERS if TESTER else MIN_PLAYERS  # and for testing we have less players available
 
 
@@ -47,7 +46,7 @@ bot.spel = Game()  # initialize the game
 
 @bot.check  # global check for all commands
 async def in_drieman_channel(ctx):  # check if command message is in correct channel and category
-    if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):
+    if not (ctx.channel.id == CHANNEL and ctx.channel.category.id == CATEGORY):
         raise commands.CheckFailure(message="wrong channel or category")
     return True
 
@@ -83,14 +82,15 @@ async def can_you_roll(ctx):  # check if a player is allowed to roll the dice
 async def on_ready():  # the output here is only visible at server level and not in Discord
     if TESTER:  # when testing, display this message when the bot has started
         print(f'{bot.user.name} has connected to Discord!')  # print bot name
-        server = discord.utils.get(bot.guilds, name=SERVER)  # find the correct server
+        server = discord.utils.get(bot.guilds, id=SERVER)  # find the correct server
         print(
             f'{bot.user.name} is connected to the following server:\n'
             f'{server.name} (id: {server.id})'
         )  # print server name and id
-        channel = discord.utils.get(server.channels, name=CHANNEL)  # find the correct channel
+        channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
         print(f'{bot.user.name} is limited to the channel:\n'
-              f'{channel.name} (id: {channel.id})')  # print channel name and id
+              f'{channel.name} (id: {channel.id})'
+              f'\nunder {channel.category.name} (id: {channel.category.id})')  # print channel name and id
         members = '\n - '.join([member.name for member in server.members])  # find all member the bot has access to
         print(f'Visible Server Members:\n - {members}')  # print these members, if correct, this should be the bot only
     else:
@@ -271,18 +271,30 @@ async def double_3man(ctx):  # activate the dubbeldrieman setting
     await ctx.channel.send(response)  # send the built up response to the channel
 
 
+@bot.command(name='koprol')
+async def koprol(ctx):
+    with open('bot/.secret', 'r') as file:  # get the access list for this command from the .secret file
+        access = [line.strip() for line in file]
+    if str(ctx.author) not in access:  # look up in the list if the user has the correct access
+        await ctx.channel.send(f"Ik dacht het niet, {ctx.author.mention}.")
+    else:
+        file = discord.File("pictures/koprol.gif")  # special gif
+        embed = discord.Embed()
+        embed.set_image(url="attachment://pictures/koprol.gif")
+        await ctx.channel.send(file=file, embed=embed)  # send the file to the channel
+
+
 @bot.event
 async def on_message(message):
-    server = discord.utils.get(bot.guilds, name=SERVER)  # find the correct server
-    channel = discord.utils.get(server.channels, name=CHANNEL)  # find the correct channel
+    server = discord.utils.get(bot.guilds, id=SERVER)  # find the correct server
+    channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
     if message.content == "3man help dubbeldrieman":  # hide the help response from this command
         # this needs to be done separately here in order to hide the command correctly
-        if not (message.channel.name == CHANNEL and message.channel.category.name == CATEGORY):
-            await channel.send(
-                f"{message.author.mention}\n"
-                f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention} onder '{CATEGORY}'.\n"
-                f"Je probeerde de DriemanBot te gebruiken in het kanaal {message.channel.mention} "
-                f"onder '{message.channel.category.name}'. Dat gaat helaas niet.")
+        if not (message.channel.id == CHANNEL and message.channel.category.id == CATEGORY):
+            await channel.send(f"{message.author.mention}\n"
+                               f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention}. "
+                               f"Je probeerde de DriemanBot te gebruiken in het kanaal {message.channel.mention}. "
+                               f"Dat gaat helaas niet.")
         else:
             await channel.send("De DriemanBot heeft geen commando 'dubbeldrieman'.")
         return
@@ -317,8 +329,8 @@ async def on_error(error, *args, **kwargs):  # general error handling happens he
             f.write("While trying to print the traceback of a Discord error, another exception occurred.\n")
             traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
         f.write("\n\n\n\n\n")  # some whitespace to distinguish different errors
-    server = discord.utils.get(bot.guilds, name=SERVER)  # find the correct server
-    channel = discord.utils.get(server.channels, name=CHANNEL)  # find the correct channel
+    server = discord.utils.get(bot.guilds, id=SERVER)  # find the correct server
+    channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
     await channel.send(f"{PROGRAMMER}, er is een fout opgetreden.")  # send error message and mention me
 
 
@@ -336,16 +348,15 @@ async def on_command_error(ctx, error):  # command error handling happens here
                 traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
             f.write("\n\n\n\n\n")  # some whitespace to distinguish different errors
 
-    server = discord.utils.get(bot.guilds, name=SERVER)  # find the correct server
-    channel = discord.utils.get(server.channels, name=CHANNEL)  # find the correct channel
+    server = discord.utils.get(bot.guilds, id=SERVER)  # find the correct server
+    channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
     if isinstance(error, commands.errors.CheckFailure):  # one of the checks failed, someone did something wrong
         # below check failures are pretty self explanatory
         if str(error) == "wrong channel or category":
-            await channel.send(
-                f"{ctx.author.mention}\n"
-                f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention} onder '{CATEGORY}'.\n"
-                f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention} "
-                f"onder '{ctx.channel.category.name}'. Dat gaat helaas niet.")
+            await channel.send(f"{ctx.author.mention}\n"
+                               f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention}. "
+                               f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention}. "
+                               f"Dat gaat helaas niet.")
         elif str(error) == "multiline message":
             await channel.send(f"{ctx.author.mention}\n"
                                f"De DriemanBot accepteert enkel commando's die bestaan uit een enkele lijn.")
@@ -376,12 +387,11 @@ async def on_command_error(ctx, error):  # command error handling happens here
             write_error()  # in this case, write the error to the error log and alert me with a mention
             await channel.send(f"{PROGRAMMER}, het commando '{ctx.message.content}' heeft iets raar gedaan.")
     elif isinstance(error, commands.errors.CommandNotFound):  # someone entered a non existing command
-        if not (ctx.channel.name == CHANNEL and ctx.channel.category.name == CATEGORY):  # in the wrong channel
-            await channel.send(
-                f"{ctx.author.mention}\n"
-                f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention} onder '{CATEGORY}'.\n"
-                f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention} "
-                f"onder '{ctx.channel.category.name}'. Dat gaat helaas niet.")
+        if not (ctx.channel.id == CHANNEL and ctx.channel.category.id == CATEGORY):  # in the wrong channel
+            await channel.send(f"{ctx.author.mention}\n"
+                               f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention}. "
+                               f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention}. "
+                               f"Dat gaat helaas niet.")
         else:  # or in the correct one, either way it's not my problem until they make it my problem
             await channel.send(f"{ctx.author.mention}\n"
                                f"Het commando '{ctx.message.content}' is onbekend. "
