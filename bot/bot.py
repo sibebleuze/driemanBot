@@ -271,7 +271,7 @@ async def double_3man(ctx):  # activate the dubbeldrieman setting
     await ctx.channel.send(response)  # send the built up response to the channel
 
 
-@bot.command(name='koprol')
+@bot.command(name='koprol', hidden=True)
 async def koprol(ctx):
     with open('bot/.secret', 'r') as file:  # get the access list for this command from the .secret file
         access = [line.strip() for line in file]
