@@ -12,6 +12,7 @@ from dotenv import load_dotenv  # noqa
 from gameplay.constants import *  # noqa
 from gameplay.game import Game  # noqa
 from gameplay.player import Player  # noqa
+from bot_help import CustomHelpCommand  # noqa
 
 gc.enable()  # explicitly enable garbage collector
 load_dotenv()  # load the Discord token as environment variable
@@ -21,27 +22,30 @@ CHANNEL = TEST_CHANNEL if TESTER else DRIEMAN_CHANNEL  # these values all togeth
 CATEGORY = TEST_CATEGORY if TESTER else DRIEMAN_CATEGORY  # and even category, all by unique IDs
 MIN_PLAYERS = MIN_TESTERS if TESTER else MIN_PLAYERS  # and for testing we have less players available
 
-
-class CustomHelpCommand(commands.DefaultHelpCommand):  # define a custom help command,
-    def __init__(self, **options):
-        options['no_category'] = "DriemanBot commando's"  # primarily to put some stuff in Dutch
-        options['verify_checks'] = False  # don't hide commands in the help overview when checks don't return True
-        options['command_attrs'] = options.get('command_attrs', {})
-        options['command_attrs'].setdefault('name', 'help')
-        options['command_attrs'].setdefault('help', 'Toon dit bericht')  # above three lines to set this Dutch string
-        super().__init__(**options)  # all other init values inherited from DefaultHelpCommand
-
-    def get_ending_note(self):  # put this return string in Dutch
-        command_name = self.invoked_with
-        return "Typ {0}{1} commando voor meer info over een commando.\n".format(self.clean_prefix, command_name)
-
-    def command_not_found(self, string):  # put this return string in Dutch
-        return f"De DriemanBot heeft geen commando '{string}'."
+# class CustomHelpCommand(commands.DefaultHelpCommand):  # define a custom help command,
+#     def __init__(self, **options):
+#         options['no_category'] = "DriemanBot commando's"  # primarily to put some stuff in Dutch
+#         options['verify_checks'] = False  # don't hide commands in the help overview when checks don't return True
+#         options['command_attrs'] = options.get('command_attrs', {})
+#         options['command_attrs'].setdefault('name', 'help')
+#         options['command_attrs'].setdefault('help', 'Toon dit bericht')  # above three lines to set this Dutch string
+#         super().__init__(**options)  # all other init values inherited from DefaultHelpCommand
+#
+#     def get_ending_note(self):  # put this return string in Dutch
+#         command_name = self.invoked_with
+#         return "Typ {0}{1} commando voor meer info over een commando.\n".format(self.clean_prefix, command_name)
+#
+#     def command_not_found(self, string):  # put this return string in Dutch
+#         return f"De DriemanBot heeft geen commando '{string}'."
 
 
 help_command = CustomHelpCommand()  # initialize the custom help command
 bot = commands.Bot(command_prefix=PREFIX, help_command=help_command)  # initialize the bot
 bot.spel = Game()  # initialize the game
+
+
+# bot.load_extension('bot_commands')
+# bot.help_command.cog = bot.cogs["DriemanBot commando's"]
 
 
 @bot.check  # global check for all commands
@@ -284,6 +288,21 @@ async def koprol(ctx):
         await ctx.channel.send(file=file, embed=embed)  # send the file to the channel
 
 
+# @bot.command()
+# async def restart(ctx):
+#     if ctx.author.mention == PROGRAMMER:
+#         await ctx.channel.send("Aan het herstarten.")
+#         await bot.logout()
+#         print(f"{bot.user.name} heeft de verbinding verbroken.")
+#         await bot.start()
+#         print(f"{bot.user.name} is afgesloten.")
+#     else:
+#         await ctx.channel.send("Ontoereikende permissies")
+
+
+# @bot.event
+# async def on_message(message):
+#     pass
 @bot.event
 async def on_message(message):
     server = discord.utils.get(bot.guilds, id=SERVER)  # find the correct server

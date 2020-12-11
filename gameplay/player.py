@@ -41,7 +41,7 @@ class Player():
     def distribute(self, player, units):
         assert self.uitdelen >= units, \
             "Niet genoeg drankeenheden over om uit te delen"  # should be checked before function call
-        player.achterstand += units  # assign drinking units to another player
+        player.add_to_drink(units)  # assign drinking units to another player
         self.uitdelen -= units  # substract assigned units from your assignable units
         return self
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 # this file contains some constant values that are used all over the project
-TESTER = False  # TESTER must be True for (easier) testing
+TESTER = True  # TESTER must be True for (easier) testing
 # TEST_SERVER = 'DriemanBot testserver'
 TEST_SERVER = 784503489509720094
 # WINA_SERVER = 'WiNA'
