@@ -55,7 +55,7 @@ while not shutdown:
     @bot.command(pass_context=True, hidden=True)
     async def power(ctx, status):  # command to shutdown or restart the bot
         global shutdown
-        if ctx.author.mention == const.PROGRAMMER:  # for one person only (the same one that gets all the error messages)
+        if ctx.author.mention == const.PROGRAMMER:  # for one person only (same one that gets all the error messages)
             if status not in ["on", "off"]:
                 raise commands.errors.CommandNotFound  # mistyped, just give a command not found, easy to figure out
             else:

@@ -52,7 +52,7 @@ class Game():
     def player_tempus(self, player, status):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
         assert isinstance(status, str) and status in ["in", "ex"], \
-            f"Misbruik van {const.TEMPUS} commando, verkeerde status {status}."  # normaal gezien gecheckt voor de functiecall
+            f"Misbruik van {const.TEMPUS} commando, verkeerde status {status}."  # normaal gezien vooraf gecheckt
         names = [player.fullname for player in self.players]  # generate a list with the full names of players, in order
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]  # find the correct Player in the list of active players
