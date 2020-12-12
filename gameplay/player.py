@@ -16,12 +16,12 @@ class Player():
         self.dbldrieman = 1  # at initiation, the player is not a dubbeldrieman
 
     def set_previous_player(self, player):
-        assert type(player) == Player, f"Dit is geen speler, maar een {type(player)}."
+        assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
         self.previous_player = player  # change the player whose turn is just before yours
         return self
 
     def set_next_player(self, player):
-        assert type(player) == Player, f"Dit is geen speler, maar een {type(player)}."
+        assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
         self.next_player = player  # change the player whose turn is just after yours
         return self
 

@@ -12,5 +12,5 @@ De versies van dependencies beschreven in requirements.txt zijn niet per se de e
 de versies die ik had staan op moment van programmeren, dus deze werken zeker.
 
 Gebruikte packages zijn o.a. discord, dotenv en os om te verbinden met de Discord API en de Discord token in te lezen
-uit .env, traceback en datetime om getimestampede errors weg te schrijven, gc om garbage collection te doen en
-numpy.random om dobbelstenen te simuleren.
+uit .env, traceback en datetime om getimestampede errors weg te schrijven, sys en importlib om zonder onderbreking
+aanpassingen te kunnen inladen, gc om garbage collection te doen en numpy.random om dobbelstenen te simuleren.

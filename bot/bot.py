@@ -1,30 +1,39 @@
 #!/usr/bin/env python3
 import gc  # noqa
+import importlib  # noqa
 import os  # noqa
-import traceback  # noqa
-from copy import deepcopy  # noqa
-from datetime import datetime  # noqa
+import sys  # noqa
 
 import discord  # noqa
 from discord.ext import commands  # noqa
 from dotenv import load_dotenv  # noqa
 
-from bot_help import CustomHelpCommand  # noqa
-from gameplay.constants import *  # noqa
-from gameplay.game import Game  # noqa
-from gameplay.player import Player  # noqa
+import bot_help  # noqa
+import gameplay.constants as const  # noqa
+import gameplay.game  # noqa
+import gameplay.player  # noqa
 
 gc.enable()  # explicitly enable garbage collector
 load_dotenv()  # load the Discord token as environment variable
 TOKEN = os.getenv('DISCORD_TOKEN')
 # use different values when testing vs. when actually in use,
-CHANNEL = TEST_CHANNEL if TESTER else DRIEMAN_CHANNEL  # these values all together determine channel
-CATEGORY = TEST_CATEGORY if TESTER else DRIEMAN_CATEGORY  # and category, by unique IDs
+CHANNEL = const.TEST_CHANNEL if const.TESTER else const.DRIEMAN_CHANNEL  # these values all together determine channel
+CATEGORY = const.TEST_CATEGORY if const.TESTER else const.DRIEMAN_CATEGORY  # and category, by unique IDs
 
 shutdown = False
 while not shutdown:
-    help_command = CustomHelpCommand()  # initialize the custom help command
-    bot = commands.Bot(command_prefix=PREFIX, help_command=help_command)  # initialize the bot
+    # reload some imports in every new loop, so we can use this to update code while running
+    importlib.reload(sys.modules["gameplay.constants"])
+    importlib.reload(sys.modules["gameplay.game"])
+    importlib.reload(sys.modules["gameplay.player"])
+    importlib.reload(sys.modules["bot_help"])
+    import gameplay.constants as const  # noqa
+
+    CHANNEL = const.TEST_CHANNEL if const.TESTER else const.DRIEMAN_CHANNEL
+    CATEGORY = const.TEST_CATEGORY if const.TESTER else const.DRIEMAN_CATEGORY
+
+    help_command = bot_help.CustomHelpCommand()  # initialize the custom help command
+    bot = commands.Bot(command_prefix=const.PREFIX, help_command=help_command)  # initialize the bot
     bot.load_extension('bot_commands')  # load all commands from bot_commands.py
     bot.help_command.cog = bot.cogs["DriemanBot commando's"]  # give help command the same help category as the others
 
@@ -46,10 +55,11 @@ while not shutdown:
     @bot.command(pass_context=True, hidden=True)
     async def power(ctx, status):  # command to shutdown or restart the bot
         global shutdown
-        if ctx.author.mention == PROGRAMMER:  # for one person only (the same one that gets all the error messages)
+        if ctx.author.mention == const.PROGRAMMER:  # for one person only (the same one that gets all the error messages)
             if status not in ["on", "off"]:
                 raise commands.errors.CommandNotFound  # mistyped, just give a command not found, easy to figure out
             else:
+                await ctx.message.delete()  # hide the existence of this command a bit, since no one else can use it
                 await ctx.channel.send("De DriemanBot is offline.")  # message to let people know the bot is gone
                 await bot.logout()  # actual shutdown
                 print(f"{bot.user.name} is offline.")  # confirmation of being offline in shell

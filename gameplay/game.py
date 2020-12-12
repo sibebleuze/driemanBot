@@ -4,10 +4,11 @@ import os  # noqa
 import discord  # noqa
 import numpy as np  # noqa
 
-from .constants import TESTER, MIN_PLAYERS, MIN_TESTERS, TEMPUS, PREFIX  # noqa
-from .player import Player  # noqa
+import gameplay.constants as const  # noqa
+import gameplay.player as pl  # noqa
 
-MIN_PLAYERS = MIN_TESTERS if TESTER else MIN_PLAYERS  # minimum amount of players is lowered when testing new code
+# minimum amount of players is lowered when testing new code
+MIN_PLAYERS = const.MIN_TESTERS if const.TESTER else const.MIN_PLAYERS
 
 
 class Game():
@@ -18,7 +19,7 @@ class Game():
         self.dbldriemansetting = False  # a new game is started without the dubbeldriemansetting on
 
     def add_player(self, player):
-        assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
+        assert isinstance(player, pl.Player), f"Dit is geen speler, maar een {type(player)}."
         assert player.fullname not in [player.fullname for player in self.players], "Deze speler zit al in het spel."
         if self.players:  # if there are already players in the game, a new player needs to be squeezed in between
             player.set_previous_player(self.players[-1])  # the new player has his turn after the player that
@@ -51,21 +52,21 @@ class Game():
     def player_tempus(self, player, status):
         assert isinstance(player, str), f"Dit is geen naam van een speler, maar een {type(player)}."
         assert isinstance(status, str) and status in ["in", "ex"], \
-            f"Misbruik van {TEMPUS} commando, verkeerde status {status}."  # normaal gezien gecheckt voor de functiecall
+            f"Misbruik van {const.TEMPUS} commando, verkeerde status {status}."  # normaal gezien gecheckt voor de functiecall
         names = [player.fullname for player in self.players]  # generate a list with the full names of players, in order
         assert player in names, "Deze speler zit niet in het spel."  # normaal gezien gecheckt voor de functiecall
         player = self.players[names.index(player)]  # find the correct Player in the list of active players
         if (status, player.tempus) in [("ex", True), ("in", False)]:  # if a player isn't already in the desired state
             player.switch_tempus()  # switch the players tempus state
             while self.beurt.tempus and not all([p.tempus for p in self.players]):  # if the player on turn is on
-                self.beurt == self.beurt.next_player  # tempus, give turn to next player if there are any left
+                self.beurt = self.beurt.next_player  # tempus, give turn to next player if there are any left
             if player.tempus:  # define a message addressing the player for the bot to send
                 response = f"{player.name} heeft nu tempus, tot zo!"
             else:
                 response = f"Welkom terug {player.name}, je moet nu {player.achterstand} drankeenheden drinken."
                 player.drinking()  # after telling the player how much to drink, forget that amount
         else:
-            response = f"Je bent al in de modus '{TEMPUS} {status}'."  # tell player he already has what he wants
+            response = f"Je bent al in de modus '{const.TEMPUS} {status}'."  # tell player he already has what he wants
         return response  # total message is returned to the bot for sending
 
     def roll(self, player):
@@ -77,7 +78,8 @@ class Game():
             "Een speler die niet aan de beurt is heeft geworpen."  # normaal gezien gecheckt voor de functiecall
         url = None  # in some cases, a file is being sent with the message here, the name of the file will be in url
         if player.tempus:  # if the player is in tempus mode, he cannot roll the dice
-            response = f"Je bent nog in modus '{TEMPUS} in'. Gebruik '{PREFIX}{TEMPUS} ex' om verder te spelen."
+            response = f"Je bent nog in modus '{const.TEMPUS} in'. " \
+                       f"Gebruik '{const.PREFIX}{const.TEMPUS} ex' om verder te spelen."
         else:  # the player can roll the dice here and a succession of events is calculated
             dice = list(np.random.randint(1, 6, 2))  # draw two random numbers between 1 and 6, borders included
             response = f"{player.name} gooide een {dice[0]} en een {dice[1]}.\n"
