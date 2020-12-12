@@ -24,8 +24,8 @@ shutdown = False
 while not shutdown:
     # reload some imports in every new loop, so we can use this to update code while running
     importlib.reload(sys.modules["gameplay.constants"])
-    importlib.reload(sys.modules["gameplay.game"])
     importlib.reload(sys.modules["gameplay.player"])
+    importlib.reload(sys.modules["gameplay.game"])
     importlib.reload(sys.modules["bot_help"])
     import gameplay.constants as const  # noqa
 
