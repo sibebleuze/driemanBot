@@ -60,7 +60,13 @@ while not shutdown:
                 raise commands.errors.CommandNotFound  # mistyped, just give a command not found, easy to figure out
             else:
                 await ctx.message.delete()  # hide the existence of this command a bit, since no one else can use it
-                await ctx.channel.send("De DriemanBot is offline.")  # message to let people know the bot is gone
+                messages = await ctx.channel.history().flatten()
+                for message in messages:
+                    if message.content == "De DriemanBot staat aan." and message.author == ctx.bot.user:
+                        await message.delete()
+                    elif message.content == "De DriemanBot staat uit." and message.author == ctx.bot.user:
+                        await message.delete()
+                await ctx.channel.send("De DriemanBot staat uit.")  # message to let people know the bot is gone
                 await bot.logout()  # actual shutdown
                 print(f"{bot.user.name} is offline.")  # confirmation of being offline in shell
             if status == "off":  # shutdown

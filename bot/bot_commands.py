@@ -43,7 +43,6 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         bot.spel = Game()  # initialize the game
         self.bot = bot
         self.time = datetime.now()
-        self.first_connect = True
 
     @commands.Cog.listener()
     async def on_ready(self):  # the output here is only visible at server level and not in Discord
@@ -59,31 +58,20 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         members = '\n - '.join([member.name for member in server.members])  # find all members the bot has access to
         # print these members, if correct, this should be the bot only
         print(f'Visible Server Members:\n - {members}')
-        if self.first_connect:
-            await channel.send("De DriemanBot is online.")  # let bot users know the bot is online,
-            self.first_connect = False  # but only the first time, not on reconnects after e.g. an internet break
         messages = await channel.history().flatten()
         for message in messages:
-            if message.content == "Reconnecting ..." and message.author == self.bot.user:
+            if message.content == "De DriemanBot staat uit." and message.author == self.bot.user:
                 await message.delete()
+            elif message.content == "De DriemanBot staat aan." and message.author == self.bot.user:
+                await message.delete()
+        await channel.send("De DriemanBot staat aan.")  # let bot users know the bot is online
 
     @commands.Cog.listener()
     async def on_disconnect(self):  # the output here is only visible at server level and not in Discord
         print(f"{self.bot.user.name} ({self.time}) is offline.")  # notice of being offline in shell
-        connected = False
-        server = discord.utils.get(self.bot.guilds, id=SERVER)  # find the correct server
-        channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
-        while not connected:
-            connected = True
-            try:
-                await channel.send("Reconnecting ...")
-            except Exception:
-                connected = False
+        while not self.bot.ws.open:
+            pass
         print(f"{self.bot.user.name} ({self.time}) is terug online.")
-        messages = await channel.history().flatten()
-        for message in messages:
-            if message.content == "Reconnecting ..." and message.author == self.bot.user:
-                await message.delete()
 
     @commands.command(name=const.REGELS, help='De link naar de regels printen.')
     async def rules(self, ctx):  # print the link to the game rules to the channel
