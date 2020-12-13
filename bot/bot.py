@@ -68,7 +68,8 @@ while not shutdown:
                         await message.delete()
                 await ctx.channel.send("De DriemanBot staat uit.")  # message to let people know the bot is gone
                 await bot.logout()  # actual shutdown
-                print(f"{bot.user.name} is offline.")  # confirmation of being offline in shell
+                t = bot.cogs["DriemanBot commando's"].time
+                print(f"{bot.user.name} ({t}) is offline.")  # confirmation of being offline in shell
             if status == "off":  # shutdown
                 shutdown = True  # will break the surrounding while loop and shut down the python script
         else:

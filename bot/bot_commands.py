@@ -69,8 +69,10 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     @commands.Cog.listener()
     async def on_disconnect(self):  # the output here is only visible at server level and not in Discord
         print(f"{self.bot.user.name} ({self.time}) is offline.")  # notice of being offline in shell
+        server = discord.utils.get(self.bot.guilds, id=SERVER)  # find the correct server
+        channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
         while not self.bot.ws.open:
-            pass
+            await channel.history().flatten()
         print(f"{self.bot.user.name} ({self.time}) is terug online.")
 
     @commands.command(name=const.REGELS, help='De link naar de regels printen.')
