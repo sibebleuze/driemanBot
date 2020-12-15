@@ -91,5 +91,5 @@ while not shutdown:
         pass
 
 
-    task = bot.loop.create_task(bot.start(TOKEN))  # two lines to start the bot in such a way that the event loop
-    bot.loop.run_until_complete(task)  # doesn't shut down and the restart and shutdown commands above work
+    task = bot.loop.create_task(bot.start(TOKEN))  # two lines to start the bot in such a way that the event loop ...
+    bot.loop.run_until_complete(task)  # ... doesn't get closed and the restart and shutdown commands above work

@@ -18,31 +18,39 @@ CATEGORY = const.TEST_CATEGORY if const.TESTER else const.DRIEMAN_CATEGORY
 MIN_PLAYERS = const.MIN_TESTERS if const.TESTER else const.MIN_PLAYERS
 
 
-async def is_new_player(ctx):  # check if player doesn't already exist
-    if str(ctx.author) in [player.fullname for player in ctx.bot.spel.players]:
-        raise commands.CheckFailure(message="player already exists")
-    return True
-
-
-async def does_player_exist(ctx):  # check if player already exists
-    if str(ctx.author) not in [player.fullname for player in ctx.bot.spel.players]:
-        raise commands.CheckFailure(message="player doesn't exist")
-    return True
-
-
-async def can_you_roll(ctx):  # check if a player is allowed to roll the dice
-    if not len(ctx.bot.spel.players) >= MIN_PLAYERS:  # not enough players joined yet to start playing
-        raise commands.CheckFailure(message="not enough players")
-    elif str(ctx.author) != ctx.bot.spel.beurt.fullname:  # it is not this players turn
-        raise commands.CheckFailure(message="not your turn")
-    return True
-
-
 class Comms(commands.Cog, name="DriemanBot commando's"):
     def __init__(self, bot):
         bot.spel = Game()  # initialize the game
         self.bot = bot
         self.time = datetime.now()
+
+    # functions in a class expect an argument self, but checks only provide ctx,
+    # so in this way the checks can still be included in the cog
+    def is_new_player(self):  # check if player doesn't already exist
+        def predicate(ctx):
+            if str(ctx.author) in [player.fullname for player in ctx.bot.spel.players]:
+                raise commands.CheckFailure(message="player already exists")
+            return True
+
+        return commands.check(predicate)
+
+    def does_player_exist(self):  # check if player already exists
+        def predicate(ctx):
+            if str(ctx.author) not in [player.fullname for player in ctx.bot.spel.players]:
+                raise commands.CheckFailure(message="player doesn't exist")
+            return True
+
+        return commands.check(predicate)
+
+    def can_you_roll(self):  # check if a player is allowed to roll the dice
+        def predicate(ctx):
+            if not len(ctx.bot.spel.players) >= MIN_PLAYERS:  # not enough players joined yet to start playing
+                raise commands.CheckFailure(message="not enough players")
+            elif str(ctx.author) != ctx.bot.spel.beurt.fullname:  # it is not this players turn
+                raise commands.CheckFailure(message="not your turn")
+            return True
+
+        return commands.check(predicate)
 
     @commands.Cog.listener()
     async def on_ready(self):  # the output here is only visible at server level and not in Discord
@@ -59,21 +67,24 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         # print these members, if correct, this should be the bot only
         print(f'Visible Server Members:\n - {members}')
         messages = await channel.history().flatten()
+        newest = sorted(messages, key=lambda x: x.created_at)[-1]
         for message in messages:
             if message.content == "De DriemanBot staat uit." and message.author == self.bot.user:
                 await message.delete()
             elif message.content == "De DriemanBot staat aan." and message.author == self.bot.user:
-                await message.delete()
-        await channel.send("De DriemanBot staat aan.")  # let bot users know the bot is online
+                if message != newest:
+                    await message.delete()
+        if newest.content != "De DriemanBot staat aan.":
+            await channel.send("De DriemanBot staat aan.")  # let bot users know the bot is online
 
     @commands.Cog.listener()
     async def on_disconnect(self):  # the output here is only visible at server level and not in Discord
-        print(f"{self.bot.user.name} ({self.time}) is offline.")  # notice of being offline in shell
+        print(f"{self.bot.user.name} ({self.time}) is offline gegaan om {datetime.now()}.")
         server = discord.utils.get(self.bot.guilds, id=SERVER)  # find the correct server
         channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
         while not self.bot.ws.open:
             await channel.history().flatten()
-        print(f"{self.bot.user.name} ({self.time}) is terug online.")
+        print(f"{self.bot.user.name} ({self.time}) is terug online gekomen om {datetime.now()}.")
 
     @commands.command(name=const.REGELS, help='De link naar de regels printen.')
     async def rules(self, ctx):  # print the link to the game rules to the channel
@@ -82,7 +93,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     @commands.command(name=const.MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers.\n"
                                                "Met het optionele argument 'bijnaam' kan je een bijnaam "
                                                "bestaande uit 1 woord kiezen.")
-    @commands.check(is_new_player)
+    # @commands.check(is_new_player)
+    @is_new_player("self")
     async def join(self, ctx, bijnaam=None):  # add a new player to the game
         response = ""
         if bijnaam is not None:  # if a nickname is given, check that it is correct
@@ -98,7 +110,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
 
     @commands.command(name=const.BIJNAAM, help='Stel je bijnaam in als je dat nog niet gedaan had '
                                                'of wijzig je bijnaam als je een andere wilt.')
-    @commands.check(does_player_exist)
+    # @commands.check(does_player_exist)
+    @does_player_exist("self")
     async def nickname(self, ctx, *, bijnaam: str):  # set another nickname for a player
         if " " in bijnaam or bijnaam == "":  # check that the nickname doesn't contain empty strings or spaces
             raise commands.CheckFailure(message="wrong nickname input")
@@ -109,7 +122,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             f"{player.name} heeft nu de bijnaam {player.nickname}.")  # send the response to the channel
 
     @commands.command(name=const.WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers.')
-    @commands.check(does_player_exist)
+    # @commands.check(does_player_exist)
+    @does_player_exist("self")
     async def leave(self, ctx):  # remove a player from the game
         response = ctx.bot.spel.remove_player(str(ctx.author))  # actual removing happens here
         if not ctx.bot.spel.players:  # if this was the last player, print a final message and start a new game
@@ -165,7 +179,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                embed=embed)  # send the built up response to the channel with embedded overview
 
     @commands.command(name=const.ROL, help='Rol de dobbelsteen als het jouw beurt is.')
-    @commands.check(can_you_roll)
+    # @commands.check(can_you_roll)
+    @can_you_roll("self")
     async def roll(self, ctx):  # rolling of the dice happens here
         response, url = ctx.bot.spel.roll(
             str(ctx.author))  # get response about dice rolls and potential files to include
@@ -183,7 +198,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                               f"Gebruik '{const.PREFIX}{const.TEMPUS} in' om je tempus te beginnen en "
                                               f"'{const.PREFIX}{const.TEMPUS} ex' om je tempus te eindigen en "
                                               "je achterstand te weten te komen.")
-    @commands.check(does_player_exist)
+    # @commands.check(does_player_exist)
+    @does_player_exist("self")
     async def tempus(self, ctx, status: str):  # allow players to take a tempus
         if status not in ["in", "ex"]:  # one can only go in or out (ex) of tempus, nothing else
             raise commands.CheckFailure(message="wrong tempus status")
@@ -197,7 +213,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                                 f"speler3:drankhoeveelheid3'\nenz. Hierbij zijn zowel speler als "
                                                 f"drankhoeveelheid een positief geheel getal. Om te zien welke speler "
                                                 f"welk getal heeft, kan je '{const.PREFIX}{const.SPELERS}' gebruiken.")
-    @commands.check(does_player_exist)
+    # @commands.check(does_player_exist)
+    @does_player_exist("self")
     async def distribute(self, ctx, *, uitgedeeld: str):  # distribute an amount of drinking units to other players
         to_distribute = [x.split(":") for x in
                          uitgedeeld.split(" ")]  # split handouts for different players and amounts
