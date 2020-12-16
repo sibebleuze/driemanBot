@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 import gc  # noqa
 import traceback  # noqa
 from copy import deepcopy  # noqa
