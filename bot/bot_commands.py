@@ -13,7 +13,7 @@ from gameplay.player import Player  # noqa
 
 # use different values when testing vs. when actually in use, these values all together determine server, channel
 # and even category, all by unique IDs and for testing we have less players available
-SERVER = const.TEST_SERVER if const.TESTER else const.WINA_SERVER
+SERVER = const.TEST_SERVER if const.TESTER else const.USER_SERVER
 CHANNEL = const.TEST_CHANNEL if const.TESTER else const.DRIEMAN_CHANNEL
 CATEGORY = const.TEST_CATEGORY if const.TESTER else const.DRIEMAN_CATEGORY
 MIN_PLAYERS = const.MIN_TESTERS if const.TESTER else const.MIN_PLAYERS

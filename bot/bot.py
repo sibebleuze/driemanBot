@@ -60,6 +60,8 @@ while not shutdown:
                 raise commands.errors.CommandNotFound  # mistyped, just give a command not found, easy to figure out
             else:
                 await ctx.message.delete()  # hide the existence of this command a bit, since no one else can use it
+                if status == "off":  # shutdown
+                    shutdown = True  # will break the surrounding while loop and shut down the python script
                 messages = await ctx.channel.history().flatten()
                 for message in messages:
                     if message.content == "De DriemanBot staat aan." and message.author == ctx.bot.user:
@@ -70,8 +72,6 @@ while not shutdown:
                 await bot.logout()  # actual shutdown
                 t = bot.cogs["DriemanBot commando's"].time
                 print(f"{bot.user.name} ({t}) is offline.")  # confirmation of being offline in shell
-            if status == "off":  # shutdown
-                shutdown = True  # will break the surrounding while loop and shut down the python script
         else:
             await ctx.channel.send("Ontoereikende permissies")  # tell other people what they're doing wrong
 
