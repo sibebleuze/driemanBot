@@ -276,14 +276,15 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
 
     @commands.command(name='koprol', hidden=True)
     async def koprol(self, ctx):
-        with open('bot/.secret', 'r') as file:  # get the access list for this command from the .secret file
+        with open('../bot/.secret', 'r') as file:  # get the access list for this command from the .secret file
             access = [line.strip() for line in file]
         if str(ctx.author) not in access:  # look up in the list if the user has the correct access
             await ctx.channel.send(f"Ik dacht het niet, {ctx.author.mention}.")
         else:
-            file = discord.File("pictures/koprol.gif")  # special gif
+            pic = "../pictures/koprol.gif"
+            file = discord.File(pic)  # special gif
             embed = discord.Embed()
-            embed.set_image(url="attachment://pictures/koprol.gif")
+            embed.set_image(url="attachment://" + pic)
             await ctx.channel.send(file=file, embed=embed)  # send the file to the channel
 
     @commands.Cog.listener()
@@ -304,7 +305,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             message)  # process all other commands first, if they got nothing, only then proceed
         if message.author == self.bot.user or message.content != "vice kapot":  # only respond to this message
             return
-        with open('bot/.secret', 'r') as file:  # get the access list for this command from the .secret file
+        with open('../bot/.secret', 'r') as file:  # get the access list for this command from the .secret file
             access = [line.strip() for line in file]
         if str(message.author) not in access:  # look up in the list if the user has the correct access
             return
@@ -317,14 +318,15 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                    f"Iemand (kuch kuck {message.author.mention}) vindt dat je nog niet zat genoeg bent.\n" \
                    f"Wie ben ik, simpele bot die ik ben, om dit tegen te spreken?\n" \
                    f"Daarom speciaal voor jou:"
-        file = discord.File("pictures/vicekapot.png")  # special message for the vice, with a picture too
+        pic = "../pictures/vicekapot.png"
+        file = discord.File(pic)  # special message for the vice, with a picture too
         embed = discord.Embed()
-        embed.set_image(url="attachment://vicekapot.png")
+        embed.set_image(url="attachment://" + pic)
         await channel.send(response, file=file, embed=embed)  # send the built up response to the channel with the file
 
     @commands.Cog.listener()
     async def on_error(self, error, *args, **kwargs):  # general error handling happens here
-        with open('err.txt', 'a') as f:  # open the error log file
+        with open('../err.txt', 'a') as f:  # open the error log file
             f.write(f"{str(datetime.now())}\n{str(error)}\n")  # write the date, time and error
             try:  # try to also write the error traceback
                 traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
@@ -339,7 +341,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     @commands.Cog.listener()
     async def on_command_error(self, ctx, error):  # command error handling happens here
         def write_error():  # function for writing errors to error log
-            with open('err.txt', 'a') as f:  # open the file to append
+            with open('../err.txt', 'a') as f:  # open the file to append
                 f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
                         f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
                         f"{ctx.message.jump_url}\n{str(error)}\n")  # write some info on what caused the error

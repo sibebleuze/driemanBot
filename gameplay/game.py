@@ -92,10 +92,10 @@ class Game():
                     player.switch_dbldrieman()  # is on, the drieman who rolls another total 3 is now dubbeldrieman
                 self.drieman = player  # the drieman is actually set to the new drieman here
                 if self.dbldriemansetting and self.drieman.dbldrieman == 2:  # if we do have a new dubbeldrieman,
-                    url = "pictures/dubbeldrieman.jpg"  # use this picture
+                    url = "../pictures/dubbeldrieman.jpg"  # use this picture
                     response += f"{self.drieman.name} is nu dubbeldrieman.\n"  # and use this line to tell everyone
                 else:  # if we just have a new drieman
-                    url = "pictures/drieman.png"  # use this picture instead
+                    url = "../pictures/drieman.png"  # use this picture instead
                     response += f"{self.drieman.name} is nu drieman.\n"  # and this line to tell everyone
             elif sum(dice) == 6:  # if the dice sum to 6, the previous player drinks one unit
                 player.previous_player.add_to_drink(1)
