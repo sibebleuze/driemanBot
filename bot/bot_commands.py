@@ -87,6 +87,30 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             await channel.history().flatten()
         print(f"{self.bot.user.name} ({self.time}) is terug online gekomen om {datetime.now()}.")
 
+    @commands.command(pass_context=True, hidden=True)
+    async def power(self, ctx, status):  # command to shutdown or restart the bot
+        if ctx.author.mention == const.PROGRAMMER:  # for one person only (same one that gets all the error messages)
+            if status not in ["on", "off"]:
+                raise commands.errors.CommandNotFound  # mistyped, just give a command not found, easy to figure out
+            else:
+                await ctx.message.delete()  # hide the existence of this command a bit, since no one else can use it
+                if status == "off":  # shutdown
+                    self.bot.shutdown = True  # will break the surrounding while loop and shut down the python script
+                messages = await ctx.channel.history().flatten()
+                for message in messages:
+                    if message.content == "De DriemanBot staat aan." and message.author == ctx.bot.user:
+                        await message.delete()
+                    elif "3man power off" in message.content or "3man power on" in message.content:
+                        await message.delete()
+                    elif message.content == "De DriemanBot staat uit." and message.author == ctx.bot.user:
+                        await message.delete()
+                await ctx.channel.send("De DriemanBot staat uit.")  # message to let people know the bot is gone
+                await self.bot.logout()  # actual shutdown
+                t = self.bot.cogs["DriemanBot commando's"].time
+                print(f"{self.bot.user.name} ({t}) is offline.")  # confirmation of being offline in shell
+        else:
+            await ctx.channel.send("Ontoereikende permissies")  # tell other people what they're doing wrong
+
     @commands.command(name=const.REGELS, help='De link naar de regels printen.')
     async def rules(self, ctx):  # print the link to the game rules to the channel
         await ctx.channel.send("Je kan de regels vinden op https://wina-gent.be/drieman.pdf.")
@@ -153,7 +177,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             gc.collect()  # explicitly collect garbage here, because we throw away all Game and Player objects here
         else:  # if enough players are left to play, don't allow someone to just throw them all out
             response = f"Er zijn nog meer dan {MIN_PLAYERS - 1} spelers in het spel. " \
-                       "Om te zorgen dat niet zomaar iedereen een actief spel kan afbreken," \
+                       "Om te zorgen dat niet zomaar iedereen een actief spel kan afbreken, " \
                        f"kan het commando '{const.PREFIX}{const.STOP}' pas gebruikt worden " \
                        f"als er minder dan {MIN_PLAYERS} overblijven. " \
                        "Als je echt het spel wil stoppen, " \

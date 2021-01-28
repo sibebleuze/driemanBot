@@ -36,6 +36,7 @@ while not shutdown:
     bot = commands.Bot(command_prefix=const.PREFIX, help_command=help_command)  # initialize the bot
     bot.load_extension('bot_commands')  # load all commands from bot_commands.py
     bot.help_command.cog = bot.cogs["DriemanBot commando's"]  # give help command the same help category as the others
+    bot.shutdown = shutdown
 
 
     @bot.check  # global check for all commands
@@ -50,30 +51,6 @@ while not shutdown:
         if "\n" in ctx.message.content:
             raise commands.CheckFailure(message="multiline message")
         return True
-
-
-    @bot.command(pass_context=True, hidden=True)
-    async def power(ctx, status):  # command to shutdown or restart the bot
-        global shutdown
-        if ctx.author.mention == const.PROGRAMMER:  # for one person only (same one that gets all the error messages)
-            if status not in ["on", "off"]:
-                raise commands.errors.CommandNotFound  # mistyped, just give a command not found, easy to figure out
-            else:
-                await ctx.message.delete()  # hide the existence of this command a bit, since no one else can use it
-                if status == "off":  # shutdown
-                    shutdown = True  # will break the surrounding while loop and shut down the python script
-                messages = await ctx.channel.history().flatten()
-                for message in messages:
-                    if message.content == "De DriemanBot staat aan." and message.author == ctx.bot.user:
-                        await message.delete()
-                    elif message.content == "De DriemanBot staat uit." and message.author == ctx.bot.user:
-                        await message.delete()
-                await ctx.channel.send("De DriemanBot staat uit.")  # message to let people know the bot is gone
-                await bot.logout()  # actual shutdown
-                t = bot.cogs["DriemanBot commando's"].time
-                print(f"{bot.user.name} ({t}) is offline.")  # confirmation of being offline in shell
-        else:
-            await ctx.channel.send("Ontoereikende permissies")  # tell other people what they're doing wrong
 
 
     @bot.event  # disable default on_message,
@@ -93,3 +70,4 @@ while not shutdown:
 
     task = bot.loop.create_task(bot.start(TOKEN))  # two lines to start the bot in such a way that the event loop ...
     bot.loop.run_until_complete(task)  # ... doesn't get closed and the restart and shutdown commands above work
+    shutdown = bot.shutdown
