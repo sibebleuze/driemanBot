@@ -39,20 +39,6 @@ while not shutdown:
     bot.shutdown = shutdown
 
 
-    @bot.check  # global check for all commands
-    async def in_drieman_channel(ctx):  # check if command message is in correct channel and category
-        if not (ctx.channel.id == CHANNEL and ctx.channel.category.id == CATEGORY):
-            raise commands.CheckFailure(message="wrong channel or category")
-        return True
-
-
-    @bot.check  # global check for all commands
-    async def oneliner(ctx):  # check if command message consists of one line only
-        if "\n" in ctx.message.content:
-            raise commands.CheckFailure(message="multiline message")
-        return True
-
-
     @bot.event  # disable default on_message,
     async def on_message(message):
         pass

@@ -25,6 +25,19 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         self.bot = bot
         self.time = datetime.now()
 
+    def in_drieman_channel(self, ctx):  # check if command message is in correct channel and category
+        if not (ctx.channel.id == CHANNEL and ctx.channel.category.id == CATEGORY):
+            raise commands.CheckFailure(message="wrong channel or category")
+        return True
+
+    def oneliner(self, ctx):  # check if command message consists of one line only
+        if "\n" in ctx.message.content:
+            raise commands.CheckFailure(message="multiline message")
+        return True
+
+    def bot_check(self, ctx):  # global checks that apply to every command of the bot
+        return self.in_drieman_channel(ctx) and self.oneliner(ctx)
+
     # functions in a class expect an argument self, but checks only provide ctx,
     # so in this way the checks can still be included in the cog
     def is_new_player(self):  # check if player doesn't already exist
