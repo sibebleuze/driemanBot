@@ -48,6 +48,7 @@ class Game():
             response += f"{player.name}, je hoort nog {player.achterstand} drankeenheden te drinken.\n"
             player.drinking()  # he then has no drinking units left
         response += f"{player.name} heeft in totaal {player.totaal} drankeenheden gedronken.\n" \
+                    f"{player.name} is in totaal {player.driemannumber} keer drieman geweest.\n" \
                     f"{player.name} heeft het spel verlaten. Slaap zacht kameraad."  # goodbye message
         return response  # total message is returned to the bot for sending
 
@@ -93,6 +94,7 @@ class Game():
                 if self.dbldriemansetting and self.drieman and self.drieman == player:  # if the dubbeldrieman setting
                     player.switch_dbldrieman()  # is on, the drieman who rolls another total 3 is now dubbeldrieman
                 self.drieman = player  # the drieman is actually set to the new drieman here
+                self.drieman.driemannumber += 1  # this player has rolled a three once more
                 if self.dbldriemansetting and self.drieman.dbldrieman == 2:  # if we do have a new dubbeldrieman,
                     url = "../pictures/dubbeldrieman.jpg"  # use this picture
                     response += f"{self.drieman.name} is nu dubbeldrieman.\n"  # and use this line to tell everyone

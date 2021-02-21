@@ -203,7 +203,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             embed.add_field(name=f'Speler: {i}',
                             value=f"Naam: {player.name}\nBijnaam: "
                                   f"{player.nickname if player.nickname is not None else ''}\nGedronken: "
-                                  f"{player.totaal}\nUit te delen: {player.uitdelen}",
+                                  f"{player.totaal}\nUit te delen: {player.uitdelen}\nDriemangetal: "
+                                  f"{player.driemannumber}",
                             inline=True)
         response = ""
         if ctx.bot.spel.beurt is not None:  # show whose turn it is if a game is going

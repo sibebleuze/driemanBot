@@ -14,6 +14,7 @@ class Player():
         self.totaal = 0  # in fact, at initiation, the player has no drinks at all
         self.uitdelen = 0  # at initiation, the player cannot assign drinks to other players
         self.dbldrieman = 1  # at initiation, the player is not a dubbeldrieman
+        self.driemannumber = 0  # at initiation, the player has not been drieman
 
     def set_previous_player(self, player):
         assert isinstance(player, Player), f"Dit is geen speler, maar een {type(player)}."
