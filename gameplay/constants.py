@@ -4,7 +4,7 @@ from .private_constants import TEST_SERVER, USER_SERVER, TEST_CHANNEL, DRIEMAN_C
 from .private_constants import TEST_CATEGORY, DRIEMAN_CATEGORY, VICE, PROGRAMMER  # noqa
 
 # this file contains some constant values that are used all over the project
-TESTER = True  # TESTER must be True for (easier) testing
+TESTER = False  # TESTER must be True for (easier) testing
 MIN_PLAYERS = 4
 MIN_TESTERS = 1
 PREFIX = '3man '
