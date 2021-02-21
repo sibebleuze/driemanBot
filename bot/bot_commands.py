@@ -244,19 +244,24 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     @commands.command(name=const.UITDELEN, help="Zeg aan wie je drankeenheden wilt uitdelen en hoeveel.\n"
                                                 f"Gebruik hiervoor het format\n'{const.PREFIX}{const.UITDELEN} "
                                                 f"speler1:drankhoeveelheid1 speler2:drankhoeveelheid2 "
-                                                f"speler3:drankhoeveelheid3'\nenz. Hierbij zijn zowel speler als "
-                                                f"drankhoeveelheid een positief geheel getal. Om te zien welke speler "
-                                                f"welk getal heeft, kan je '{const.PREFIX}{const.SPELERS}' gebruiken.")
+                                                f"speler3:drankhoeveelheid3'\nenz. Hierbij is drankhoeveelheid een "
+                                                f"positief geheel getal. Voor speler kan je ofwel een volgnummer "
+                                                f"gebruiken, ofwel de speler taggen (met @speler). Om te zien wie er "
+                                                f"allemaal meedoet, kan je '{const.PREFIX}{const.SPELERS}' gebruiken.")
     @does_player_exist("self")  # @commands.check(does_player_exist)
     async def distribute(self, ctx, *, uitgedeeld: str):  # distribute an amount of drinking units to other players
+        while ' :' in uitgedeeld:
+            uitgedeeld = uitgedeeld.replace(' :', ':')
         to_distribute = [x.split(":") for x in
                          uitgedeeld.split(" ")]  # split handouts for different players and amounts
-        to_distribute = [[(person if person.isnumeric() else (
-            person if person not in [player.name for player in self.players] else [player.name for player in
-                                                                                   self.players].index(person))), units]
-                         for person, units in to_distribute]  # allow mentions instead of player index numbers
-        try:  # try to make integers out of everything
-            to_distribute = [(int(x), int(y)) for x, y in to_distribute]
+        try:
+            to_distribute = [[(person if person.isnumeric() else (
+                person if person not in [player.name for player in self.bot.spel.players] else [player.name for player
+                                                                                                in
+                                                                                                self.bot.spel.players].index(
+                    person))), units] for person, units in
+                             to_distribute]  # allow mentions instead of player index numbers
+            to_distribute = [(int(x), int(y)) for x, y in to_distribute]  # try to make integers out of everything
         except Exception:  # if this fails, the input was wrong
             raise commands.CheckFailure(message="wrong distribute call")
         if not all(
