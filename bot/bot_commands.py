@@ -129,7 +129,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         await ctx.channel.send("Je kan de regels vinden op https://wina-gent.be/drieman.pdf.")
 
     @commands.command(name=const.MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers.\n"
-                                               "Met het optionele argument 'bijnaam' kan je een bijnaam "
+                                               "Met het optionele argument 'naam' kan je een naam "
                                                "bestaande uit 1 woord kiezen.")
     @is_new_player("self")  # @commands.check(is_new_player)
     async def join(self, ctx, bijnaam=None):  # add a new player to the game
@@ -145,8 +145,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         response += f"{player.name} ({player.nickname}) is in het spel gekomen."
         await ctx.channel.send(response)  # send the built up response to the channel
 
-    @commands.command(name=const.BIJNAAM, help='Stel je bijnaam in als je dat nog niet gedaan had '
-                                               'of wijzig je bijnaam als je een andere wilt.')
+    @commands.command(name=const.BIJNAAM, help='Stel je naam in als je dat nog niet gedaan had '
+                                               'of wijzig je naam als je een andere wilt.')
     @does_player_exist("self")  # @commands.check(does_player_exist)
     async def nickname(self, ctx, *, bijnaam: str):  # set another nickname for a player
         if " " in bijnaam or bijnaam == "":  # check that the nickname doesn't contain empty strings or spaces
@@ -155,7 +155,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         player = ctx.bot.spel.players[[player.fullname for player in ctx.bot.spel.players].index(str(ctx.author))]
         player.set_nickname(bijnaam)  # set the nickname
         await ctx.channel.send(
-            f"{player.name} heeft nu de bijnaam {player.nickname}.")  # send the response to the channel
+            f"{player.name} heeft nu de naam {player.nickname}.")  # send the response to the channel
 
     @commands.command(name=const.WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers.')
     @does_player_exist("self")  # @commands.check(does_player_exist)
@@ -201,11 +201,9 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         for i, player in enumerate(ctx.bot.spel.players):  # add all players individually
             # player number, name, nickname, drinks to drink and to distribute are displayed
             embed.add_field(name=f'Speler: {i}',
-                            value=f"Naam: {player.name}\nBijnaam: "
-                                  f"{player.nickname if player.nickname is not None else ''}\nGedronken: "
-                                  f"{player.totaal}\nUit te delen: {player.uitdelen}\nDriemangetal: "
-                                  f"{player.driemannumber}",
-                            inline=True)
+                            value=f"Naam: {player.nickname if player.nickname is not None else player.fullname[:-5]}\n"
+                                  f"Gedronken: {player.totaal}\nUit te delen: {player.uitdelen}\nDriemangetal: "
+                                  f"{player.driemannumber}", inline=True)
         response = ""
         if ctx.bot.spel.beurt is not None:  # show whose turn it is if a game is going
             response += f"{ctx.bot.spel.beurt.name} is aan de beurt."
@@ -445,7 +443,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                 await channel.send(f"{ctx.author.mention}\n"
                                    f"De DriemanBot accepteert enkel commando's die bestaan uit een enkele lijn.")
             elif str(error) == "wrong nickname input":
-                await channel.send(f"De bijnaam die je hebt ingegeven kan niet geaccepteerd worden, kies iets anders.")
+                await channel.send(f"De naam die je hebt ingegeven kan niet geaccepteerd worden, kies iets anders.")
             elif str(error) == "player doesn't exist":
                 await channel.send(f"Je speelt nog niet mee. Gebruik '{const.PREFIX}{const.MEEDOEN}' om mee te doen.\n"
                                    f"Daarna kan je dit commando pas gebruiken.")
