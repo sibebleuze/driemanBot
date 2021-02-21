@@ -41,6 +41,8 @@ class Game():
         player.next_player.set_previous_player(player.previous_player)  # next and previous player are connected
         player.previous_player.set_next_player(player.next_player)
         self.players.remove(player)  # player is removed from the active player list
+        while self.beurt.tempus:
+            self.beurt = self.beurt.next_player
         response = ""  # a response is built up for the bot to send to the channel for the player leaving
         if player.achterstand != 0:  # if a player has drinking units left on his tab, this is printed out
             response += f"{player.name}, je hoort nog {player.achterstand} drankeenheden te drinken.\n"

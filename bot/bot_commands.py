@@ -131,8 +131,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     @commands.command(name=const.MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers.\n"
                                                "Met het optionele argument 'bijnaam' kan je een bijnaam "
                                                "bestaande uit 1 woord kiezen.")
-    # @commands.check(is_new_player)
-    @is_new_player("self")
+    @is_new_player("self")  # @commands.check(is_new_player)
     async def join(self, ctx, bijnaam=None):  # add a new player to the game
         response = ""
         if bijnaam is not None:  # if a nickname is given, check that it is correct
@@ -148,8 +147,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
 
     @commands.command(name=const.BIJNAAM, help='Stel je bijnaam in als je dat nog niet gedaan had '
                                                'of wijzig je bijnaam als je een andere wilt.')
-    # @commands.check(does_player_exist)
-    @does_player_exist("self")
+    @does_player_exist("self")  # @commands.check(does_player_exist)
     async def nickname(self, ctx, *, bijnaam: str):  # set another nickname for a player
         if " " in bijnaam or bijnaam == "":  # check that the nickname doesn't contain empty strings or spaces
             raise commands.CheckFailure(message="wrong nickname input")
@@ -160,8 +158,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             f"{player.name} heeft nu de bijnaam {player.nickname}.")  # send the response to the channel
 
     @commands.command(name=const.WEGGAAN, help='Jezelf verwijderen uit de lijst van actieve spelers.')
-    # @commands.check(does_player_exist)
-    @does_player_exist("self")
+    @does_player_exist("self")  # @commands.check(does_player_exist)
     async def leave(self, ctx):  # remove a player from the game
         response = ctx.bot.spel.remove_player(str(ctx.author))  # actual removing happens here
         if not ctx.bot.spel.players:  # if this was the last player, print a final message and start a new game
@@ -217,8 +214,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                embed=embed)  # send the built up response to the channel with embedded overview
 
     @commands.command(name=const.ROL, help='Rol de dobbelsteen als het jouw beurt is.')
-    # @commands.check(can_you_roll)
-    @can_you_roll("self")
+    @can_you_roll("self")  # @commands.check(can_you_roll)
     async def roll(self, ctx):  # rolling of the dice happens here
         response, url = ctx.bot.spel.roll(
             str(ctx.author))  # get response about dice rolls and potential files to include
@@ -236,8 +232,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                               f"Gebruik '{const.PREFIX}{const.TEMPUS} in' om je tempus te beginnen en "
                                               f"'{const.PREFIX}{const.TEMPUS} ex' om je tempus te eindigen en "
                                               "je achterstand te weten te komen.")
-    # @commands.check(does_player_exist)
-    @does_player_exist("self")
+    @does_player_exist("self")  # @commands.check(does_player_exist)
     async def tempus(self, ctx, status: str):  # allow players to take a tempus
         if status not in ["in", "ex"]:  # one can only go in or out (ex) of tempus, nothing else
             raise commands.CheckFailure(message="wrong tempus status")
@@ -251,8 +246,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                                 f"speler3:drankhoeveelheid3'\nenz. Hierbij zijn zowel speler als "
                                                 f"drankhoeveelheid een positief geheel getal. Om te zien welke speler "
                                                 f"welk getal heeft, kan je '{const.PREFIX}{const.SPELERS}' gebruiken.")
-    # @commands.check(does_player_exist)
-    @does_player_exist("self")
+    @does_player_exist("self")  # @commands.check(does_player_exist)
     async def distribute(self, ctx, *, uitgedeeld: str):  # distribute an amount of drinking units to other players
         to_distribute = [x.split(":") for x in
                          uitgedeeld.split(" ")]  # split handouts for different players and amounts
@@ -323,6 +317,35 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             embed = discord.Embed()
             embed.set_image(url="attachment://" + pic)
             await ctx.channel.send(file=file, embed=embed)  # send the file to the channel
+
+    @commands.command(name='skip', hidden=True)
+    async def skip(self, ctx):
+        if ctx.author.mention == const.PROGRAMMER:  # for one person only (same one that gets all the error messages)
+            await ctx.message.delete()  # hide the existence of this command a bit, since no one else can use it
+            await ctx.channel.send(f"{self.bot.spel.beurt.name}, je doet er te lang over om te spelen, daarom ben "
+                                   f"je even overgeslagen. Je hebt nu drie keuzes; kom terug meedoen, neem een tempus "
+                                   f"of verlaat het spel. Bij herhaaldelijk je beurt missen zal {const.PROGRAMMER} je "
+                                   f"uit het spel verwijderen.")
+            self.bot.spel.beurt = self.bot.spel.beurt.next_player  # the turn goes to the next person
+            while self.bot.spel.beurt.tempus:
+                self.bot.spel.beurt = self.bot.spel.beurt.next_player
+            await ctx.channel.send(f"{self.bot.spel.beurt.name} is nu aan de beurt.")
+        else:
+            await ctx.channel.send("Ontoereikende permissies")  # tell other people what they're doing wrong
+
+    @commands.command(name='buitenwipper', hidden=True)
+    async def eject(self, ctx):
+        if ctx.author.mention == const.PROGRAMMER:  # for one person only (same one that gets all the error messages)
+            await ctx.message.delete()  # hide the existence of this command a bit, since no one else can use it
+            await ctx.channel.send(f"{self.bot.spel.beurt.name}, je bent te lang inactief geweest in het spel en "
+                                   f"waarschijnlijk heb je ook al 1 of meer beurten gemist. Daarom heeft "
+                                   f"{const.PROGRAMMER} besloten om je eruit te gooien. Je kan opnieuw meedoen, maar "
+                                   f"let dan wel op alsjeblieft.")
+            response = self.bot.spel.remove_player(self.bot.spel.beurt.fullname)  # actual removing happens here
+            await ctx.channel.send(response)  # send the built up response to the channel
+            await ctx.channel.send(f"{self.bot.spel.beurt.name} is nu aan de beurt.")
+        else:
+            await ctx.channel.send("Ontoereikende permissies")  # tell other people what they're doing wrong
 
     @commands.Cog.listener()
     async def on_message(self, message):
