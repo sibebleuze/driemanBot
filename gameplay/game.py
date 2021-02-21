@@ -41,7 +41,7 @@ class Game():
         player.next_player.set_previous_player(player.previous_player)  # next and previous player are connected
         player.previous_player.set_next_player(player.next_player)
         self.players.remove(player)  # player is removed from the active player list
-        while self.beurt.tempus:
+        while self.beurt.tempus and not all([p.tempus for p in self.players]):
             self.beurt = self.beurt.next_player
         response = ""  # a response is built up for the bot to send to the channel for the player leaving
         if player.achterstand != 0:  # if a player has drinking units left on his tab, this is printed out
@@ -109,7 +109,7 @@ class Game():
                 player.uitdelen += dice[0]  # as many as one dice counts
             if not (sum(dice) in range(6, 8 + 1) or dice[0] == dice[1]):  # if nothing happens (except for 3s)
                 self.beurt = self.beurt.next_player  # the turn goes to the next person
-                while self.beurt.tempus:
+                while self.beurt.tempus and not all([p.tempus for p in self.players]):
                     self.beurt = self.beurt.next_player
             response += self.drink()  # this function builds additional text to tell everyone how much to drink
         response += f"\n{self.beurt.name} is aan de beurt."

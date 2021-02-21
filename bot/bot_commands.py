@@ -253,7 +253,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         to_distribute = [[(person if person.isnumeric() else (
             person if person not in [player.name for player in self.players] else [player.name for player in
                                                                                    self.players].index(person))), units]
-                         for person, units in to_distribute]
+                         for person, units in to_distribute]  # allow mentions instead of player index numbers
         try:  # try to make integers out of everything
             to_distribute = [(int(x), int(y)) for x, y in to_distribute]
         except Exception:  # if this fails, the input was wrong
@@ -331,7 +331,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                    f"of verlaat het spel. Bij herhaaldelijk je beurt missen zal {const.PROGRAMMER} je "
                                    f"uit het spel verwijderen.")
             self.bot.spel.beurt = self.bot.spel.beurt.next_player  # the turn goes to the next person
-            while self.bot.spel.beurt.tempus:
+            while self.bot.spel.beurt.tempus and not all([p.tempus for p in self.bot.spel.players]):
                 self.bot.spel.beurt = self.bot.spel.beurt.next_player
             await ctx.channel.send(f"{self.bot.spel.beurt.name} is nu aan de beurt.")
         else:
