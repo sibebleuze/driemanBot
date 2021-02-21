@@ -369,10 +369,10 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         await self.bot.process_commands(
             message)  # process all other commands first, if they got nothing, only then proceed
         if message.author != self.bot.user and message.content != "vice kapot":
-            messages = await channel.history(limit=50).flatten()
+            messages = await channel.history(limit=25).flatten()
             mssgs = []
             for mssg in messages:  # check if someone is spamming the channel with non game related messages
-                if mssg.author == message.author and mssg.content == message.content:
+                if mssg.author == message.author and mssg.content == message.content and '3man ' not in mssg.content:
                     mssgs.append(mssg)
             if len(mssgs) > 3:  # is someone is spamming the channel, delete these spam messages
                 for mssg in mssgs:
