@@ -250,6 +250,10 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     async def distribute(self, ctx, *, uitgedeeld: str):  # distribute an amount of drinking units to other players
         to_distribute = [x.split(":") for x in
                          uitgedeeld.split(" ")]  # split handouts for different players and amounts
+        to_distribute = [[(person if person.isnumeric() else (
+            person if person not in [player.name for player in self.players] else [player.name for player in
+                                                                                   self.players].index(person))), units]
+                         for person, units in to_distribute]
         try:  # try to make integers out of everything
             to_distribute = [(int(x), int(y)) for x, y in to_distribute]
         except Exception:  # if this fails, the input was wrong
