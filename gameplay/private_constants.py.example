@@ -1,0 +1,17 @@
+# this is a copy of the file private_constants.py used in my own setup,
+# to give you an idea of what needs to be in there,
+# but with the actual values set to some random values of the same type and length as they should have
+# you should fill all with your own values or comment them out before running the bot,
+# as I have no idea what might happen with the random values in place
+
+
+#!/usr/bin/env python3
+# this file contains some private constant values that are used all over the project
+TEST_SERVER = 787381674210541053
+USER_SERVER = 627182284560254580
+TEST_CHANNEL = 788546307891245801
+DRIEMAN_CHANNEL = 788542387652102548
+TEST_CATEGORY = 787381674210541054
+DRIEMAN_CATEGORY = 777485061423574801
+VICE = '<@508732480125674706>'
+PROGRAMMER = '<@!785624015826785540>'
