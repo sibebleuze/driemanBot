@@ -126,7 +126,7 @@ class Game():
                 else:  # print out the count and forget it
                     response += f"{player.name} moet {player.achterstand} drankeenheden drinken.\n"
                     player.drinking()
-            if player.uitdelen > 0:  # also print how much they can hand out
+            if player == self.beurt and player.uitdelen > 0:  # also print how much they can hand out if it's their turn
                 response += f"{player.name} mag (in totaal) nog {player.uitdelen} drankeenheden uitdelen.\n"
         response += "Dat is alles, drinken maar!"  # print a final sentence to not let the statement end with newline
         return response  # total message is returned to the bot for sending
