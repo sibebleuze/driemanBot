@@ -129,7 +129,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         await ctx.channel.send("Je kan de regels vinden op https://wina-gent.be/drieman.pdf.")
 
     @commands.command(name=const.MEEDOEN, help="Jezelf toevoegen aan de lijst van actieve spelers.\n"
-                                               "Met het optionele argument 'naam' kan je een naam "
+                                               "Met het optionele argument 'bijnaam' kan je een naam "
                                                "bestaande uit 1 woord kiezen.")
     @is_new_player("self")  # @commands.check(is_new_player)
     async def join(self, ctx, bijnaam=None):  # add a new player to the game

@@ -8,6 +8,9 @@ import discord  # noqa
 from discord.ext import commands  # noqa
 from dotenv import load_dotenv  # noqa
 
+# add the parent directory of cwd to the path, assuming the cwd is the directory that holds bot.py
+sys.path.extend([os.path.abspath(os.getcwd() + "\\..")])
+
 import bot_help  # noqa
 import gameplay.constants as const  # noqa
 import gameplay.game  # noqa
