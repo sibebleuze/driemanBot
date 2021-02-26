@@ -80,7 +80,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         members = '\n - '.join([member.name for member in server.members])  # find all members the bot has access to
         # print these members, if correct, this should be the bot only
         print(f'Visible Server Members:\n - {members}')
-        messages = await channel.history().flatten()
+        messages = await channel.history(limit=500).flatten()
         newest = sorted(messages, key=lambda x: x.created_at)[-1]
         for message in messages:
             if message.content == "De DriemanBot staat uit." and message.author == self.bot.user:
@@ -97,7 +97,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         server = discord.utils.get(self.bot.guilds, id=SERVER)  # find the correct server
         channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
         while not self.bot.ws.open:
-            await channel.history().flatten()
+            await channel.history(limit=1).flatten()
         print(f"{self.bot.user.name} ({self.time}) is terug online gekomen om {datetime.now()}.")
 
     @commands.command(pass_context=True, hidden=True)
@@ -110,7 +110,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                 await ctx.message.delete()  # hide the existence of this command a bit, since no one else can use it
                 if status == "off":  # shutdown
                     self.bot.shutdown = True  # will break the surrounding while loop and shut down the python script
-                messages = await ctx.channel.history().flatten()
+                messages = await ctx.channel.history(limit=500).flatten()
                 for message in messages:
                     if message.content == "De DriemanBot staat aan." and message.author == ctx.bot.user:
                         await message.delete()
