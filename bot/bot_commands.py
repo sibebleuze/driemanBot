@@ -251,15 +251,17 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     async def distribute(self, ctx, *, uitgedeeld: str):  # distribute an amount of drinking units to other players
         while ' :' in uitgedeeld:
             uitgedeeld = uitgedeeld.replace(' :', ':')
+        while ': ' in uitgedeeld:
+            uitgedeeld = uitgedeeld.replace(': ', ':')
+        while '@!' in uitgedeeld:
+            uitgedeeld = uitgedeeld.replace('@!', '@')
         to_distribute = [x.split(":") for x in
                          uitgedeeld.split(" ")]  # split handouts for different players and amounts
         try:
-            # allow mentions instead of player index numbers
             to_distribute = [[(person if person.isnumeric() else
-                               (person if person.replace('@!', '@') not in
-                                          [player.name for player in self.bot.spel.players] else
-                                [player.name for player in self.bot.spel.players].index(person.replace('@!', '@')))),
-                              units] for person, units in to_distribute]
+                               (person if person not in [player.name for player in self.bot.spel.players] else
+                                [player.name for player in self.bot.spel.players].index(person))), units] for
+                             person, units in to_distribute]  # allow mentions instead of player index numbers
             to_distribute = [(int(x), int(y)) for x, y in to_distribute]  # try to make integers out of everything
         except Exception:  # if this fails, the input was wrong
             raise commands.CheckFailure(message="wrong distribute call")
