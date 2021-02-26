@@ -253,12 +253,10 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
         to_distribute = [x.split(":") for x in
                          uitgedeeld.split(" ")]  # split handouts for different players and amounts
         try:
-            to_distribute = [[(person if person.isnumeric() else (
-                person if person not in [player.name for player in self.bot.spel.players] else [player.name for player
-                                                                                                in
-                                                                                                self.bot.spel.players].index(
-                    person))), units] for person, units in
-                             to_distribute]  # allow mentions instead of player index numbers
+            to_distribute = [[(person if person.isnumeric() else
+                               (person if person not in [player.name for player in self.bot.spel.players] else
+                                [player.name for player in self.bot.spel.players].index(person))), units] for
+                             person, units in to_distribute]  # allow mentions instead of player index numbers
             to_distribute = [(int(x), int(y)) for x, y in to_distribute]  # try to make integers out of everything
         except Exception:  # if this fails, the input was wrong
             raise commands.CheckFailure(message="wrong distribute call")
@@ -430,46 +428,69 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                     traceback.print_exception(etype="ignored", value=exc, tb=exc.__traceback__, file=f, chain=True)
                 f.write("\n\n\n\n\n")  # some whitespace to distinguish different errors
 
+        def write_log():  # function for writing info to log in case something unexpected happens in normal operation
+            with open('../log.txt', 'a') as f:  # open the file to append
+                f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
+                        f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
+                        f"{ctx.message.jump_url}\n{str(error)}\n")  # write some info on what caused the log write
+                for player in self.bot.spel.players:
+                    f.write(f"{player.fullname}  {player.name}  {player.nickname}  {player.previous_player.fullname}  "
+                            f"{player.next_player.fullname}  {player.tempus}  {player.achterstand}  {player.totaal}  "
+                            f"{player.uitdelen}  {player.dbldrieman}  {player.driemannumber}")
+                f.write(f"{self.bot.spel.beurt}  {self.bot.spel.drieman}  {self.bot.spel.dbldriemansetting}")
+                f.write("\n\n")  # some whitespace to distinguish different logs
+
         server = discord.utils.get(self.bot.guilds, id=SERVER)  # find the correct server
         channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
         if isinstance(error, commands.errors.CheckFailure):  # one of the checks failed, someone did something wrong
             # below check failures are pretty self explanatory
             if str(error) == "wrong channel or category":
+                write_log()
                 await channel.send(f"{ctx.author.mention}\n"
                                    f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention}. "
                                    f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention}. "
                                    f"Dat gaat helaas niet.")
             elif str(error) == "multiline message":
+                write_log()
                 await channel.send(f"{ctx.author.mention}\n"
                                    f"De DriemanBot accepteert enkel commando's die bestaan uit een enkele lijn.")
             elif str(error) == "wrong nickname input":
+                write_log()
                 await channel.send(f"De naam die je hebt ingegeven kan niet geaccepteerd worden, kies iets anders.")
             elif str(error) == "player doesn't exist":
+                write_log()
                 await channel.send(f"Je speelt nog niet mee. Gebruik '{const.PREFIX}{const.MEEDOEN}' om mee te doen.\n"
                                    f"Daarna kan je dit commando pas gebruiken.")
             elif str(error) == "player already exists":
+                write_log()
                 await channel.send(f"Je speelt al mee. Gebruik '{const.PREFIX}{const.WEGGAAN}' om weg te gaan.\n"
                                    f"Daarna kan je dit commando pas opnieuw gebruiken.")
             elif str(error) == "wrong tempus status":
+                write_log()
                 await channel.send(f"Je kan enkel '{const.PREFIX}{const.TEMPUS} in' of "
                                    f"'{const.PREFIX}{const.TEMPUS} ex' gebruiken."
                                    f"'{ctx.message.content}' is geen geldig tempus commando.")
             elif str(error) == "not your turn":
+                write_log()
                 await channel.send("Je bent nu niet aan de beurt, wacht alsjeblieft geduldig je beurt af.\n"
                                    f"Het is nu de beurt aan {self.bot.spel.beurt.name}")
             elif str(error) == "not enough players":
+                write_log()
                 await channel.send("Nog niet genoeg spelers, "
                                    f"je moet minstens met {MIN_PLAYERS} zijn om te kunnen driemannen (zie art. 1).\n"
                                    f"Wacht tot er nog {MIN_PLAYERS - len(self.bot.spel.players)} speler(s) "
                                    f"meer meedoet/meedoen.")
             elif str(error) == "not enough drink units left":
+                write_log()
                 await channel.send("Je hebt niet genoeg drankeenheden meer over om uit te delen.")
             elif str(error) == "wrong distribute call":
+                write_log()
                 await channel.send("Gebruik het juiste format om drankeenheden uit te delen, anders lukt het niet.")
             else:  # in case it isn't one of the above cases, something actually went wrong
                 write_error()  # in this case, write the error to the error log and alert me with a mention
                 await channel.send(f"{const.PROGRAMMER}, het commando '{ctx.message.content}' heeft iets raar gedaan.")
         elif isinstance(error, commands.errors.CommandNotFound):  # someone entered a non existing command
+            write_log()
             if not (ctx.channel.id == CHANNEL and ctx.channel.category.id == CATEGORY):  # in the wrong channel
                 await channel.send(f"{ctx.author.mention}\n"
                                    f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention}. "
@@ -480,6 +501,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                    f"Het commando '{ctx.message.content}' is onbekend. "
                                    "Contacteer de beheerder van de DriemanBot als je denkt dat dit zou moeten werken.")
         elif isinstance(error, commands.errors.MissingRequiredArgument):  # also pretty self explanatory
+            write_log()
             response = f"Het commando '{ctx.message.content}' heeft een verplicht argument dat hier ontbreekt."
             if ctx.message.content[:len(const.PREFIX) + len(const.UITDELEN)] == const.PREFIX + const.UITDELEN:
                 response += "\nGebruik het juiste format om drankeenheden uit te delen, anders lukt het niet. " \
