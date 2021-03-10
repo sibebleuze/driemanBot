@@ -382,7 +382,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             for mssg in messages:  # check if someone is spamming the channel with non game related messages
                 if mssg.author == message.author and mssg.content == message.content and '3man ' not in mssg.content:
                     mssgs.append(mssg)
-            if len(mssgs) > 3:  # is someone is spamming the channel, delete these spam messages
+            if len(mssgs) > 3:  # if someone is spamming the channel, delete these spam messages
                 for mssg in mssgs:
                     await mssg.delete()
                 await channel.send(f"{message.author.mention.replace('@!', '@')}, alleen ik mag dit kanaal volspammen.")
