@@ -451,7 +451,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                 drieman = self.bot.spel.drieman if not isinstance(self.bot.spel.drieman,
                                                                   Player) else self.bot.spel.drieman.fullname
                 f.write(f"beurt: {beurt}  drieman: {drieman}  dbldriemansetting: {self.bot.spel.dbldriemansetting}")
-                f.write("\n\n")  # some whitespace to distinguish different logs
+                f.write("\n\n\n\n\n")  # some whitespace to distinguish different logs
 
         server = discord.utils.get(self.bot.guilds, id=SERVER)  # find the correct server
         channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
