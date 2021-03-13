@@ -6,6 +6,7 @@ from datetime import datetime  # noqa
 
 import discord  # noqa
 from discord.ext import commands  # noqa
+from pytz import timezone as tz  # noqa
 
 import gameplay.constants as const  # noqa
 from gameplay.game import Game  # noqa
@@ -88,7 +89,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             elif message.content == "De DriemanBot staat aan." and message.author == self.bot.user:
                 if message != newest:
                     await message.delete()
-        if newest.content != "De DriemanBot staat aan.":
+        if newest.content != "De DriemanBot staat aan." or newest.author != self.bot.user:
             await channel.send("De DriemanBot staat aan.")  # let bot users know the bot is online
 
     @commands.Cog.listener()
@@ -430,8 +431,9 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     async def on_command_error(self, ctx, error):  # command error handling happens here
         def write_error():  # function for writing errors to error log
             with open('../err.txt', 'a') as f:  # open the file to append
-                f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
-                        f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
+                f.write(f"{str(ctx.message.created_at.astimezone(tz('Europe/Brussels')))}  "
+                        f"{ctx.message.guild}  {ctx.message.channel.category}  {ctx.message.channel}  "
+                        f"{ctx.message.author}  {ctx.message.content}\n"
                         f"{ctx.message.jump_url}\n{str(error)}\n")  # write some info on what caused the error
                 try:  # try to also write the error traceback
                     traceback.print_exception(etype="ignored", value=error, tb=error.__traceback__, file=f, chain=True)
@@ -442,8 +444,9 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
 
         def write_log():  # function for writing info to log in case something unexpected happens in normal operation
             with open('../log.txt', 'a') as f:  # open the file to append
-                f.write(f"{str(ctx.message.created_at)}  {ctx.message.guild}  {ctx.message.channel.category}  "
-                        f"{ctx.message.channel}  {ctx.message.author}  {ctx.message.content}\n"
+                f.write(f"{str(ctx.message.created_at.astimezone(tz('Europe/Brussels')))}  "
+                        f"{ctx.message.guild}  {ctx.message.channel.category}  {ctx.message.channel}  "
+                        f"{ctx.message.author}  {ctx.message.content}\n"
                         f"{ctx.message.jump_url}\n{str(error)}\n")  # write some info on what caused the log write
                 for player in self.bot.spel.players:
                     f.write(f"fullname: {player.fullname}  name: {player.name}  nickname: {player.nickname}  "
