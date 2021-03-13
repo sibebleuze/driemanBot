@@ -136,7 +136,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
     async def join(self, ctx, bijnaam=None):  # add a new player to the game
         response = ""
         if bijnaam is not None:  # if a nickname is given, check that it is correct
-            if not (isinstance(bijnaam, str) and " " not in bijnaam and bijnaam != ""):  # no empty strings or spaces
+            if not (isinstance(bijnaam, str) and bijnaam != "" and len(bijnaam) <= 50):  # no empty or long strings
                 raise commands.CheckFailure(message="wrong nickname input")
         player = Player(ctx.author).set_nickname(bijnaam)  # initiate the Player and set its nickname
         ctx.bot.spel.add_player(player)  # add the new Player object to the active player list
@@ -150,7 +150,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                                'of wijzig je naam als je een andere wilt.')
     @does_player_exist("self")  # @commands.check(does_player_exist)
     async def nickname(self, ctx, *, bijnaam: str):  # set another nickname for a player
-        if " " in bijnaam or bijnaam == "":  # check that the nickname doesn't contain empty strings or spaces
+        if bijnaam == "" or len(bijnaam) >= 50:  # check that the nickname doesn't contain empty or long strings
             raise commands.CheckFailure(message="wrong nickname input")
         # find the correct Player in the list of active players
         player = ctx.bot.spel.players[[player.fullname for player in ctx.bot.spel.players].index(str(ctx.author))]
@@ -362,6 +362,8 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
 
     @commands.Cog.listener()
     async def on_message(self, message):
+        if message.author == self.bot.user:
+            return
         server = discord.utils.get(self.bot.guilds, id=SERVER)  # find the correct server
         channel = discord.utils.get(server.channels, id=CHANNEL)  # find the correct channel
         if message.content == "3man help dubbeldrieman":  # hide the help response from this command
@@ -376,19 +378,22 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
             return
         await self.bot.process_commands(
             message)  # process all other commands first, if they got nothing, only then proceed
-        if message.author != self.bot.user and message.content != "vice kapot":
+        if message.content != "vice kapot":
             messages = await channel.history(limit=25).flatten()
             mssgs = []
             for mssg in messages:  # check if someone is spamming the channel with non game related messages
-                if mssg.author == message.author and mssg.content == message.content and '3man ' not in mssg.content:
+                if mssg.author == message.author and mssg.content == message.content and '3man ' != mssg.content[:5]:
                     mssgs.append(mssg)
             if len(mssgs) > 3:  # if someone is spamming the channel, delete these spam messages
                 for mssg in mssgs:
                     await mssg.delete()
                 await channel.send(f"{message.author.mention.replace('@!', '@')}, alleen ik mag dit kanaal volspammen.")
-        if message.author == self.bot.user or message.content != "vice kapot":  # only respond to this message
+        if message.content.count('\n') >= 4 and message.channel.id == CHANNEL:  # 5 lines or more in unneccesary
+            await channel.send(f"{message.author.mention.replace('@!', '@')}, dit kanaal is zo al onoverzichtelijk "
+                               f"genoeg. Probeer het niet nog erger te maken.")
+        if message.content != "vice kapot":  # only respond to this message from here on
             return
-        with open('../bot/.secret', 'r') as file:  # get the access list for this command from the .secret file
+        with open(const.SECRET, 'r') as file:  # get the access list for this command from the .secret file
             access = [line.strip() for line in file]
         if str(message.author) not in access:  # look up in the list if the user has the correct access
             return
@@ -465,6 +470,7 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                                    f"Dat gaat helaas niet.")
             elif str(error) == "multiline message":
                 write_log()
+                await ctx.message.delete()  # some people are being annoying with huge messages, throw them away
                 await channel.send(f"{ctx.author.mention.replace('@!', '@')}\n"
                                    f"De DriemanBot accepteert enkel commando's die bestaan uit een enkele lijn.")
             elif str(error) == "wrong nickname input":
@@ -503,22 +509,32 @@ class Comms(commands.Cog, name="DriemanBot commando's"):
                 write_error()  # in this case, write the error to the error log and alert me with a mention
                 await channel.send(f"{const.PROGRAMMER}, het commando '{ctx.message.content}' heeft iets raar gedaan.")
         elif isinstance(error, commands.errors.CommandNotFound):  # someone entered a non existing command
-            write_log()
             if not (ctx.channel.id == CHANNEL and ctx.channel.category.id == CATEGORY):  # in the wrong channel
+                write_log()
                 await channel.send(f"{ctx.author.mention.replace('@!', '@')}\n"
                                    f"De DriemanBot kan enkel gebruikt worden in het kanaal {channel.mention}. "
                                    f"Je probeerde de DriemanBot te gebruiken in het kanaal {ctx.channel.mention}. "
                                    f"Dat gaat helaas niet.")
-            else:  # or in the correct one, either way it's not my problem until they make it my problem
+            elif '\n' in ctx.message.content:  # on multiple lines
+                write_log()
+                await ctx.message.delete()  # some people are being annoying with huge messages, throw them away
                 await channel.send(f"{ctx.author.mention.replace('@!', '@')}\n"
-                                   f"Het commando '{ctx.message.content}' is onbekend. "
-                                   "Contacteer de beheerder van de DriemanBot als je denkt dat dit zou moeten werken.")
+                                   f"De DriemanBot accepteert enkel commando's die bestaan uit een enkele lijn.")
+            else:  # or in the correct channel, either way it's not my problem until they make it my problem
+                messages = await channel.history(limit=25).flatten()
+                if ctx.message.content in [m.content for m in messages]:
+                    await ctx.message.delete()  # forget repeated mistakes (deliberate or not), even delete them
+                else:
+                    write_log()
+                    await channel.send(f"{ctx.author.mention.replace('@!', '@')}\nHet commando '{ctx.message.content}' "
+                                       f"is onbekend. Contacteer de beheerder van de DriemanBot als je denkt dat dit "
+                                       f"zou moeten werken.")
         elif isinstance(error, commands.errors.MissingRequiredArgument):  # also pretty self explanatory
             write_log()
             response = f"Het commando '{ctx.message.content}' heeft een verplicht argument dat hier ontbreekt."
             if ctx.message.content[:len(const.PREFIX) + len(const.UITDELEN)] == const.PREFIX + const.UITDELEN:
                 response += "\nGebruik het juiste format om drankeenheden uit te delen, anders lukt het niet. " \
-                            f"Met '{const.PREFIX} help {const.UITDELEN}' kan je zien hoe het moet."
+                            f"Met '{const.PREFIX}help {const.UITDELEN}' kan je zien hoe het moet."
             elif ctx.message.content[:len(const.PREFIX) + len(const.TEMPUS)] == const.PREFIX + const.TEMPUS:
                 response += f"\n'{ctx.message.content}' is geen geldig tempus commando."
             await channel.send(response)  # tell them what they did wrong

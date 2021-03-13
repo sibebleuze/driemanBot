@@ -7,7 +7,7 @@ class Player():
         self.fullname = str(discorduser)  # unique string to identify players
         mention = discorduser.mention.replace('@!', '@')  # some players have a ! in their mention, some don't
         self.name = mention  # string usable by bot to mention players by their Discord name
-        self.nickname = discorduser.display_name  # player nickname, defaults to Discord display name
+        self.nickname = discorduser.display_name[:50]  # player nickname, defaults to Discord display name (max len 50)
         self.previous_player = self  # we have no info on other players at this point,
         self.next_player = self  # so we set these to the only player we do know, which is self
         self.tempus = False  # at initiation, the player is not taking a tempus

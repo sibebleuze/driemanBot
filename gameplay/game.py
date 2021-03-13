@@ -13,8 +13,8 @@ MIN_PLAYERS = const.MIN_TESTERS if const.TESTER else const.MIN_PLAYERS
 
 class Game():
     def __init__(self):
-        self.drieman = None  # no one is drieman at the start of the game
         self.players = []  # keep a list of all players that are in the game
+        self.drieman = None  # no one is drieman at the start of the game
         self.beurt = None  # it is no ones turn yet
         self.dbldriemansetting = False  # a new game is started without the dubbeldriemansetting on
 
